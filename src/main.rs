@@ -1,6 +1,9 @@
 extern crate rcc4;
 
 fn main() {
-    rcc4::compile("10".to_string());
+    match rcc4::compile("10".to_string()) {
+        Ok(_) => (),
+        Err(err) => panic!(err),
+    }
     println!("{:?}", rcc4::run());
 }
