@@ -3,21 +3,11 @@ extern crate inkwell;
 use inkwell::context::Context;
 use std::{path, process};
 
-fn tokenize(code: String) -> u64 {
-    let mut chars = code.chars().peekable();
-
-    let mut s = String::from("");
-    while let Some(c) = chars.peek() {
-        s += &c.to_string();
-        chars.next();
-    }
-    let num: u64 = s.parse().unwrap_or_else(|err| panic!(err));
-    num
-}
+mod tokenize;
 
 pub fn compile(code: String) {
     // tokenize
-    let num = tokenize(code);
+    let num = tokenize::tokenize(code);
 
     // emit
     let context = Context::create();
