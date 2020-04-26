@@ -1,5 +1,5 @@
 mod consume_number;
-mod token;
+pub mod token;
 
 use self::consume_number::consume_number;
 use self::token::Token;

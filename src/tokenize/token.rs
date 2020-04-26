@@ -8,18 +8,18 @@ pub enum Token {
 }
 
 impl Token {
-    pub fn get_number(self) -> Result<u64, TokenError> {
+    pub fn get_number(&self) -> Result<u64, TokenError> {
         if let Token::Number(num) = self {
-            return Ok(num);
+            return Ok(*num);
         }
-        Err(TokenError::UnexpectedType(self))
+        Err(TokenError::UnexpectedType(self.clone()))
     }
 
-    pub fn get_operator(self) -> Result<String, TokenError> {
-        if let Token::Operator(op) = self {
+    pub fn get_operator(&self) -> Result<String, TokenError> {
+        if let Token::Operator(op) = self.clone() {
             return Ok(op);
         }
-        Err(TokenError::UnexpectedType(self))
+        Err(TokenError::UnexpectedType(self.clone()))
     }
 }
 
