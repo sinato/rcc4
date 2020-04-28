@@ -13,7 +13,7 @@ pub fn compile(code: String) {
     println!("tokens: {:?}", tokens);
 
     // parse
-    let node = parse::parse(tokens);
+    let node = *parse::parse(tokens);
     println!("node: {:?}", node);
 
     // emit
@@ -64,11 +64,6 @@ mod tests {
     }
 
     #[test]
-    fn crazy_multi_add() {
-        run_test("10+20*30".to_string(), "60");
-    }
-
-    #[test]
     fn binary_mul() {
         run_test("10*20".to_string(), "200");
     }
@@ -76,5 +71,10 @@ mod tests {
     #[test]
     fn multi_mul() {
         run_test("2*3*4".to_string(), "24");
+    }
+
+    #[test]
+    fn multi_add_mul() {
+        run_test("1+2*3+4".to_string(), "11");
     }
 }
