@@ -22,6 +22,15 @@ impl Token {
         Err(TokenError::UnexpectedType(self.clone()))
     }
 }
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let string = match self {
+            Token::Number(number) => format!("number: {}", number),
+            Token::Operator(operator) => format!("operator: {}", operator),
+        };
+        write!(f, "{}", string)
+    }
+}
 
 #[derive(Debug)]
 pub enum TokenError {
