@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ManagedToken {
     token: Token,
     line: u32,
@@ -15,6 +15,9 @@ impl ManagedToken {
             line,
             location,
         }
+    }
+    pub fn get_token(&self) -> &Token {
+        &self.token
     }
 }
 impl From<ManagedToken> for Token {
