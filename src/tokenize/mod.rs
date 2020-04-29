@@ -14,6 +14,8 @@ pub fn tokenize(code: String) -> Vec<Token> {
         } else if c == &'+' || c == &'*' {
             tokens.push(Token::Operator(c.to_string()));
             chars.next();
+        } else if c == &' ' || c == &'\n' {
+            chars.next();
         } else {
             panic!("unexpected char {:?}", c);
         }
@@ -51,6 +53,34 @@ mod tests {
                 Token::Number(10),
                 Token::Operator("*".to_string()),
                 Token::Number(20)
+            ]
+        );
+    }
+
+    #[test]
+    fn binary_calc_with_whitespace() {
+        assert_eq!(
+            tokenize("1 + 2 * 3".to_string()),
+            vec![
+                Token::Number(1),
+                Token::Operator("+".to_string()),
+                Token::Number(2),
+                Token::Operator("*".to_string()),
+                Token::Number(3)
+            ]
+        );
+    }
+
+    #[test]
+    fn binary_calc_with_newline() {
+        assert_eq!(
+            tokenize("1\n+\n2\n*\n3".to_string()),
+            vec![
+                Token::Number(1),
+                Token::Operator("+".to_string()),
+                Token::Number(2),
+                Token::Operator("*".to_string()),
+                Token::Number(3)
             ]
         );
     }
