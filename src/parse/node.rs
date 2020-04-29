@@ -19,11 +19,22 @@ impl Node {
             operand: Vec::new(),
         })
     }
-    pub fn to_string(&self, tab_level: u32) -> String {
+    pub fn to_string(&self) -> String {
+        let mut s = "".to_owned();
+        s += "AST ==========================\n";
+        s += &self.to_string_rec(0);
+        s += "==============================\n";
+        s
+    }
+    fn to_string_rec(&self, tab_level: u32) -> String {
         let mut s = "".to_owned();
         s += &format!("{}{}\n", get_space(tab_level), self.operator);
         for val in self.operand.iter() {
-            s += &format!("{}{}", get_space(tab_level), val.to_string(tab_level + 1));
+            s += &format!(
+                "{}{}",
+                get_space(tab_level),
+                val.to_string_rec(tab_level + 1)
+            );
         }
         s
     }

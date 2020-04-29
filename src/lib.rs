@@ -14,7 +14,7 @@ pub fn compile(code: String) {
 
     // parse
     let node = *parse::parse(tokens);
-    println!("node: {:?}", node);
+    println!("{}", node.to_string());
 
     // emit
     let context = Context::create();
