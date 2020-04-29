@@ -1,6 +1,28 @@
 use std::error::Error;
 use std::fmt;
 
+#[derive(Debug, PartialEq)]
+pub struct ManagedToken {
+    token: Token,
+    line: u32,
+    location: u32,
+}
+
+impl ManagedToken {
+    pub fn new(token: Token, line: u32, location: u32) -> ManagedToken {
+        ManagedToken {
+            token,
+            line,
+            location,
+        }
+    }
+}
+impl From<ManagedToken> for Token {
+    fn from(managed_token: ManagedToken) -> Token {
+        managed_token.token
+    }
+}
+
 #[derive(PartialEq, Debug, Clone)]
 pub enum Token {
     Number(u64),

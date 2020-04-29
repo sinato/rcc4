@@ -2,6 +2,8 @@ extern crate inkwell;
 
 use inkwell::context::Context;
 use std::process;
+use tokenize::token::Token;
+use tokenize::Tokenizer;
 
 pub mod emit;
 pub mod parse;
@@ -9,7 +11,10 @@ pub mod tokenize;
 
 pub fn compile(code: String) {
     // tokenize
-    let tokens = tokenize::tokenize(code);
+    let tokens: Vec<Token> = Tokenizer::tokenize(&code)
+        .into_iter()
+        .map(|mtoken| From::from(mtoken))
+        .collect();
     println!("tokens: {:?}", tokens);
 
     // parse
