@@ -5,9 +5,10 @@ use std::str::Chars;
 pub fn consume_number(chars: &mut Peekable<Chars>) -> Token {
     let mut s = String::from("");
     while let Some(c) = chars.peek() {
-        match c {
-            '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => s += &c.to_string(),
-            _ => break,
+        if c.is_ascii_digit() {
+            s += &c.to_string();
+        } else {
+            break;
         }
         chars.next();
     }

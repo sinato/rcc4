@@ -9,15 +9,13 @@ pub fn tokenize(code: String) -> Vec<Token> {
 
     let mut tokens: Vec<Token> = Vec::new();
     while let Some(c) = chars.peek() {
-        match c {
-            '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
-                tokens.push(consume_number(&mut chars))
-            }
-            '+' | '*' => {
-                tokens.push(Token::Operator(c.to_string()));
-                chars.next();
-            }
-            _ => panic!("unexpected char {:?}", c),
+        if c.is_ascii_digit() {
+            tokens.push(consume_number(&mut chars));
+        } else if c == &'+' || c == &'*' {
+            tokens.push(Token::Operator(c.to_string()));
+            chars.next();
+        } else {
+            panic!("unexpected char {:?}", c);
         }
     }
     tokens
