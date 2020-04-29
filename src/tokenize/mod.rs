@@ -1,7 +1,7 @@
 mod consume_number;
 pub mod token;
 
-use self::consume_number::consume_number;
+use self::consume_number::{consume_identifier, consume_number};
 use self::token::Token;
 
 pub fn tokenize(code: String) -> Vec<Token> {
@@ -14,8 +14,16 @@ pub fn tokenize(code: String) -> Vec<Token> {
         } else if c == &'+' || c == &'*' {
             tokens.push(Token::Operator(c.to_string()));
             chars.next();
+        } else if c == &'{' || c == &'}' {
+            tokens.push(Token::Bracket(c.to_string()));
+            chars.next();
+        } else if c == &'(' || c == &')' {
+            tokens.push(Token::Parenthesis(c.to_string()));
+            chars.next();
         } else if c == &' ' || c == &'\n' {
             chars.next();
+        } else if c.is_ascii_alphabetic() {
+            tokens.push(consume_identifier(&mut chars));
         } else {
             panic!("unexpected char {:?}", c);
         }
@@ -86,8 +94,11 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "unexpected char \'a\'")]
-    fn illegal_number() {
-        tokenize("1a0".to_string());
+    fn crazy_tokenize() {
+        // should panic...
+        assert_eq!(
+            tokenize("1a0".to_string()),
+            vec![Token::Number(1), Token::Identifier("a0".to_string()),]
+        );
     }
 }

@@ -4,7 +4,10 @@ use std::fmt;
 #[derive(PartialEq, Debug, Clone)]
 pub enum Token {
     Number(u64),
+    Identifier(String),
     Operator(String),
+    Bracket(String),
+    Parenthesis(String),
 }
 
 impl Token {
@@ -26,7 +29,10 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let string = match self {
             Token::Number(number) => format!("number: {}", number),
+            Token::Identifier(identifier) => format!("identifier: {}", identifier),
             Token::Operator(operator) => format!("operator: {}", operator),
+            Token::Bracket(bracket) => format!("bracket: {}", bracket),
+            Token::Parenthesis(parenthesis) => format!("parenthesis: {}", parenthesis),
         };
         write!(f, "{}", string)
     }

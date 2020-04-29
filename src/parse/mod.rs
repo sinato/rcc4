@@ -6,6 +6,26 @@ use std::iter::{IntoIterator, Peekable};
 use std::slice::IterMut;
 
 pub fn parse(tokens: Vec<Token>) -> Box<Node> {
+    get_main_block(&mut tokens.clone())
+}
+
+fn get_main_block(tokens: &mut Vec<Token>) -> Box<Node> {
+    let mut tokens_iter = tokens.into_iter().peekable();
+    let mut target_tokens: Vec<Token> = Vec::new();
+    while let Some(token) = tokens_iter.peek() {
+        match token {
+            Token::Number(_) | Token::Operator(_) => {
+                target_tokens.push(tokens_iter.next().unwrap().to_owned());
+            }
+            _ => {
+                tokens_iter.next();
+            }
+        }
+    }
+    parse_expression(target_tokens)
+}
+
+fn parse_expression(tokens: Vec<Token>) -> Box<Node> {
     get_sum(&mut tokens.clone())
 }
 
@@ -75,68 +95,103 @@ mod tests {
 
     use self::super::*;
 
-    #[test]
-    fn binary_add() {
-        let actual: Node = *parse(vec![
-            Token::Number(10),
-            Token::Operator("+".to_owned()),
-            Token::Number(20),
-        ]);
-        let expect: Node = Node {
-            operator: Token::Operator("+".to_owned()),
-            operand: vec![
-                Node::create_single_node(Token::Number(10)),
-                Node::create_single_node(Token::Number(20)),
-            ],
-        };
-        assert_eq!(actual, expect);
+    #[cfg(test)]
+    mod parser {
+        use self::super::*;
+
+        #[test]
+        fn main_func() {
+            let actual: Node = *parse(vec![
+                Token::Identifier("int".to_owned()),
+                Token::Identifier("main".to_owned()),
+                Token::Parenthesis("(".to_owned()),
+                Token::Parenthesis(")".to_owned()),
+                Token::Bracket("{".to_owned()),
+                Token::Number(10),
+                Token::Bracket("}".to_owned()),
+            ]);
+            let expect: Node = Node {
+                operator: Token::Number(10),
+                operand: vec![],
+            };
+            assert_eq!(actual, expect);
+        }
     }
 
-    #[test]
-    fn binary_add_mul() {
-        let actual = *parse(vec![
-            Token::Number(10),
-            Token::Operator("+".to_owned()),
-            Token::Number(20),
-            Token::Operator("*".to_owned()),
-            Token::Number(30),
-            Token::Operator("+".to_owned()),
-            Token::Number(40),
-        ]);
-        let expect: Node = Node {
-            operator: Token::Operator("+".to_owned()),
-            operand: vec![
-                Node::create_single_node(Token::Number(10)),
-                Box::new(Node {
-                    operator: Token::Operator("*".to_owned()),
-                    operand: vec![
-                        Node::create_single_node(Token::Number(20)),
-                        Node::create_single_node(Token::Number(30)),
-                    ],
-                }),
-                Node::create_single_node(Token::Number(40)),
-            ],
-        };
-        assert_eq!(actual, expect);
+    #[cfg(test)]
+    mod expression {
+
+        use self::super::*;
+
+        #[test]
+        fn binary_add() {
+            let actual: Node = *parse_expression(vec![
+                Token::Number(10),
+                Token::Operator("+".to_owned()),
+                Token::Number(20),
+            ]);
+            let expect: Node = Node {
+                operator: Token::Operator("+".to_owned()),
+                operand: vec![
+                    Node::create_single_node(Token::Number(10)),
+                    Node::create_single_node(Token::Number(20)),
+                ],
+            };
+            assert_eq!(actual, expect);
+        }
+
+        #[test]
+        fn binary_add_mul() {
+            let actual = *parse_expression(vec![
+                Token::Number(10),
+                Token::Operator("+".to_owned()),
+                Token::Number(20),
+                Token::Operator("*".to_owned()),
+                Token::Number(30),
+                Token::Operator("+".to_owned()),
+                Token::Number(40),
+            ]);
+            let expect: Node = Node {
+                operator: Token::Operator("+".to_owned()),
+                operand: vec![
+                    Node::create_single_node(Token::Number(10)),
+                    Box::new(Node {
+                        operator: Token::Operator("*".to_owned()),
+                        operand: vec![
+                            Node::create_single_node(Token::Number(20)),
+                            Node::create_single_node(Token::Number(30)),
+                        ],
+                    }),
+                    Node::create_single_node(Token::Number(40)),
+                ],
+            };
+            assert_eq!(actual, expect);
+        }
     }
 
-    #[test]
-    fn consume_to_binary_operator_add() {
-        let tokens = &mut vec![
-            Token::Number(10),
-            Token::Number(20),
-            Token::Operator("+".to_owned()),
-        ];
-        let mut tokens: Peekable<IterMut<Token>> = tokens.into_iter().peekable();
-        let actual = consume_to_binary_operator(&mut tokens, "+".to_string());
-        assert_eq!(actual, vec![Token::Number(10), Token::Number(20)]);
-    }
+    #[cfg(test)]
+    mod consumer {
 
-    #[test]
-    fn consume_to_binary_operator_eol() {
-        let tokens = &mut vec![Token::Number(10), Token::Number(20)];
-        let mut tokens: Peekable<IterMut<Token>> = tokens.into_iter().peekable();
-        let actual = consume_to_binary_operator(&mut tokens, "+".to_string());
-        assert_eq!(actual, vec![Token::Number(10), Token::Number(20)]);
+        use self::super::*;
+
+        #[test]
+        fn consume_to_binary_operator_add() {
+            let tokens = &mut vec![
+                Token::Number(10),
+                Token::Number(20),
+                Token::Operator("+".to_owned()),
+            ];
+            let mut tokens: Peekable<IterMut<Token>> = tokens.into_iter().peekable();
+            let actual = consume_to_binary_operator(&mut tokens, "+".to_string());
+            assert_eq!(actual, vec![Token::Number(10), Token::Number(20)]);
+        }
+
+        #[test]
+        fn consume_to_binary_operator_eol() {
+            let tokens = &mut vec![Token::Number(10), Token::Number(20)];
+            let mut tokens: Peekable<IterMut<Token>> = tokens.into_iter().peekable();
+            let actual = consume_to_binary_operator(&mut tokens, "+".to_string());
+            assert_eq!(actual, vec![Token::Number(10), Token::Number(20)]);
+        }
     }
 }

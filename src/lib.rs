@@ -41,8 +41,8 @@ mod tests {
 
     use self::super::*;
 
-    fn run_test(code: String, expect: &str) {
-        compile(code);
+    fn run_test(code: &str, expect: &str) {
+        compile(code.to_owned());
         let actual = run();
         println!("{:?} => {:?}", actual, expect);
         assert_eq!(actual, String::from(format!("exit code: {}", expect)));
@@ -50,31 +50,61 @@ mod tests {
 
     #[test]
     fn sigle_number() {
-        run_test("10".to_string(), "10");
+        let code = "
+        int main() {
+            10
+        }
+        ";
+        run_test(code, "10");
     }
 
     #[test]
     fn binary_add() {
-        run_test("10+20".to_string(), "30");
+        let code = "
+        int main() {
+            10+20
+        }
+        ";
+        run_test(code, "30");
     }
 
     #[test]
     fn multi_add() {
-        run_test("10+20+30".to_string(), "60");
+        let code = "
+        int main() {
+            10+20+30
+        }
+        ";
+        run_test(code, "60");
     }
 
     #[test]
     fn binary_mul() {
-        run_test("10*20".to_string(), "200");
+        let code = "
+        int main() {
+            10*20
+        }
+        ";
+        run_test(code, "200");
     }
 
     #[test]
     fn multi_mul() {
-        run_test("2*3*4".to_string(), "24");
+        let code = "
+        int main() {
+            2*3*4
+        }
+        ";
+        run_test(code, "24");
     }
 
     #[test]
     fn multi_add_mul() {
-        run_test("1+2*3+4".to_string(), "11");
+        let code = "
+        int main() {
+            1 + 2 * 3 + 4
+        }
+        ";
+        run_test(code, "11");
     }
 }

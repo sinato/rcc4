@@ -16,6 +16,19 @@ pub fn consume_number(chars: &mut Peekable<Chars>) -> Token {
     Token::Number(num)
 }
 
+pub fn consume_identifier(chars: &mut Peekable<Chars>) -> Token {
+    let mut s = String::from("");
+    while let Some(c) = chars.peek() {
+        if c.is_alphabetic() || c.is_ascii_digit() {
+            s += &c.to_string();
+        } else {
+            break;
+        }
+        chars.next();
+    }
+    Token::Identifier(s)
+}
+
 #[cfg(test)]
 mod tests {
 
