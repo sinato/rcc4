@@ -34,6 +34,8 @@ impl<'a> Tokenizer<'a> {
                 tokens.push(tokenizer.consume_parenthesis());
             } else if c == &' ' || c == &'\n' {
                 tokenizer.next();
+            } else if c == &';' {
+                tokens.push(tokenizer.consume_semicolon());
             } else if c.is_ascii_alphabetic() {
                 tokens.push(tokenizer.consume_identifier());
             } else {
@@ -88,7 +90,12 @@ impl<'a> Tokenizer<'a> {
             }
             self.next();
         }
-        ManagedToken::new(Token::Identifier(s), line, location)
+        // treat as reserved keyword
+        if s == "return" {
+            ManagedToken::new(Token::Return, line, location)
+        } else {
+            ManagedToken::new(Token::Identifier(s), line, location)
+        }
     }
     fn consume_operator(&mut self) -> ManagedToken {
         let line = self.cursor_line;
@@ -110,6 +117,12 @@ impl<'a> Tokenizer<'a> {
 
         let c = self.next().unwrap();
         ManagedToken::new(Token::Parenthesis(c.to_string()), line, location)
+    }
+    fn consume_semicolon(&mut self) -> ManagedToken {
+        let line = self.cursor_line;
+        let location = self.cursor_location;
+        self.next();
+        ManagedToken::new(Token::Semicolon, line, location)
     }
 }
 

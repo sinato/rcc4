@@ -85,6 +85,8 @@ impl<'a, 'ctx> Emitter<'a, 'ctx> {
             }
             Token::Bracket(_) => unimplemented!(),
             Token::Parenthesis(_) => unimplemented!(),
+            Token::Return => unimplemented!(),
+            Token::Semicolon => unimplemented!(),
         };
         Ok(val)
     }

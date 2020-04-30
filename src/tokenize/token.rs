@@ -38,6 +38,8 @@ pub enum Token {
     Operator(String),
     Bracket(String),
     Parenthesis(String),
+    Return,
+    Semicolon,
 }
 
 impl Token {
@@ -70,6 +72,8 @@ impl fmt::Display for Token {
             Token::Operator(operator) => format!("operator: {}", operator),
             Token::Bracket(bracket) => format!("bracket: {}", bracket),
             Token::Parenthesis(parenthesis) => format!("parenthesis: {}", parenthesis),
+            Token::Return => format!("return"),
+            Token::Semicolon => format!(";"),
         };
         write!(f, "{}", string)
     }
