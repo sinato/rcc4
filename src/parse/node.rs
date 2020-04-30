@@ -1,40 +1,71 @@
-use super::super::tokenize::token::Token;
+use super::super::tokenize::token::{ManagedToken, Token};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Node {
-    pub operator: Token,
-    pub operand: Vec<Box<Node>>,
+pub struct FunctionNode {
+    pub identifier: ManagedToken,
+    pub return_type: ManagedToken,
+    pub argument_types: Vec<ManagedToken>,
+    pub block: Vec<ExpressionNode>,
 }
-
-impl Node {
-    pub fn get_operator_clone(&self) -> Token {
-        self.operator.clone()
-    }
-    pub fn get_operand(self) -> Vec<Box<Node>> {
-        self.operand
-    }
-    pub fn create_single_node(token: Token) -> Box<Node> {
-        Box::new(Node {
-            operator: token,
-            operand: Vec::new(),
-        })
+impl FunctionNode {
+    pub fn new(
+        identifier: ManagedToken,
+        return_type: ManagedToken,
+        argument_types: Vec<ManagedToken>,
+        block: Vec<ExpressionNode>,
+    ) -> FunctionNode {
+        FunctionNode {
+            identifier,
+            return_type,
+            argument_types,
+            block,
+        }
     }
     pub fn to_string(&self) -> String {
         let mut s = "".to_owned();
         s += "AST ==========================\n";
-        s += &self.to_string_rec(0);
+        s += &format!("function: {}\n", self.identifier);
+        s += &format!("return_type: {}\n", self.return_type);
+        s += &format!("argument_types:\n");
+        for argument in self.argument_types.iter() {
+            s += &format!("{:?}\n", argument);
+        }
+        s += &format!("block:\n");
+        for expression in self.block.iter() {
+            s += &expression.to_string(1);
+        }
         s += "==============================\n";
         s
     }
-    fn to_string_rec(&self, tab_level: u32) -> String {
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ExpressionNode {
+    pub operator: Token,
+    pub operand: Vec<Box<ExpressionNode>>,
+}
+
+impl ExpressionNode {
+    pub fn new(operator: Token, operand: Vec<Box<ExpressionNode>>) -> ExpressionNode {
+        ExpressionNode { operator, operand }
+    }
+    pub fn get_operator_clone(&self) -> Token {
+        self.operator.clone()
+    }
+    pub fn get_operand(self) -> Vec<Box<ExpressionNode>> {
+        self.operand
+    }
+    pub fn create_single_node(token: Token) -> Box<ExpressionNode> {
+        Box::new(ExpressionNode {
+            operator: token,
+            operand: Vec::new(),
+        })
+    }
+    fn to_string(&self, tab_level: u32) -> String {
         let mut s = "".to_owned();
         s += &format!("{}{}\n", get_space(tab_level), self.operator);
         for val in self.operand.iter() {
-            s += &format!(
-                "{}{}",
-                get_space(tab_level),
-                val.to_string_rec(tab_level + 1)
-            );
+            s += &format!("{}{}", get_space(tab_level), val.to_string(tab_level + 1));
         }
         s
     }

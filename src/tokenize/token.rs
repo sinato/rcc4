@@ -25,6 +25,11 @@ impl From<ManagedToken> for Token {
         managed_token.token
     }
 }
+impl fmt::Display for ManagedToken {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.token)
+    }
+}
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Token {
@@ -36,6 +41,13 @@ pub enum Token {
 }
 
 impl Token {
+    pub fn get_identifier(&self) -> Result<String, TokenError> {
+        if let Token::Identifier(identifier) = self {
+            return Ok(identifier.to_owned());
+        }
+        Err(TokenError::UnexpectedType(self.clone()))
+    }
+
     pub fn get_number(&self) -> Result<u64, TokenError> {
         if let Token::Number(num) = self {
             return Ok(*num);
