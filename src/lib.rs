@@ -2,6 +2,7 @@ extern crate inkwell;
 
 use inkwell::context::Context;
 use std::process;
+use tokenize::tokens::Tokens;
 use tokenize::Tokenizer;
 
 pub mod emit;
@@ -9,9 +10,13 @@ pub mod parse;
 pub mod tokenize;
 
 pub fn compile(code: String) {
+    // print input
+    println!("================================{}", code);
+    println!("================================\n");
+
     // tokenize
-    let tokens = Tokenizer::tokenize(&code);
-    println!("tokens: {:?}", tokens);
+    let tokens = Tokens::new(Tokenizer::tokenize(&code));
+    println!("{}", tokens);
 
     // parse
     let node = match parse::parse(tokens) {
@@ -56,7 +61,7 @@ mod tests {
     fn sigle_number() {
         let code = "
         int main() {
-            10
+            return 10;
         }
         ";
         run_test(code, "10");
@@ -66,7 +71,7 @@ mod tests {
     fn binary_add() {
         let code = "
         int main() {
-            10+20
+            return 10+20;
         }
         ";
         run_test(code, "30");
@@ -76,7 +81,7 @@ mod tests {
     fn multi_add() {
         let code = "
         int main() {
-            10+20+30
+            return 10+20+30;
         }
         ";
         run_test(code, "60");
@@ -86,7 +91,7 @@ mod tests {
     fn binary_mul() {
         let code = "
         int main() {
-            10*20
+            return 10*20;
         }
         ";
         run_test(code, "200");
@@ -96,7 +101,7 @@ mod tests {
     fn multi_mul() {
         let code = "
         int main() {
-            2*3*4
+            return 2*3*4;
         }
         ";
         run_test(code, "24");
@@ -106,7 +111,7 @@ mod tests {
     fn multi_add_mul() {
         let code = "
         int main() {
-            1 + 2 * 3 + 4
+            return 1 + 2 * 3 + 4;
         }
         ";
         run_test(code, "11");

@@ -6,7 +6,7 @@ use std::vec::IntoIter;
 
 type Result<T> = std::result::Result<T, ParseError>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Tokens {
     tokens: Peekable<IntoIter<ManagedToken>>,
 }
@@ -53,6 +53,9 @@ impl Tokens {
                     break;
                 }
             }
+            if let Token::Semicolon = token.get_token() {
+                break;
+            }
             target_tokens.push(self.next().unwrap());
         }
         target_tokens
@@ -86,6 +89,37 @@ impl Tokens {
             },
             None => Err(ParseError::Consume(None)),
         }
+    }
+
+    pub fn consume_return(&mut self) -> Result<ManagedToken> {
+        match self.tokens.peek() {
+            Some(token) => match token.get_token() {
+                Token::Return => Ok(self.tokens.next().unwrap()),
+                _ => Err(ParseError::Consume(Some(token.clone()))),
+            },
+            None => Err(ParseError::Consume(None)),
+        }
+    }
+
+    pub fn consume_semicolon(&mut self) -> Result<ManagedToken> {
+        match self.tokens.peek() {
+            Some(token) => match token.get_token() {
+                Token::Semicolon => Ok(self.tokens.next().unwrap()),
+                _ => Err(ParseError::Consume(Some(token.clone()))),
+            },
+            None => Err(ParseError::Consume(None)),
+        }
+    }
+}
+
+impl fmt::Display for Tokens {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "tokens =========================\n")?;
+        let mut tokens = self.clone();
+        while let Some(mtoken) = tokens.next() {
+            write!(f, "{:?}\n", mtoken.get_token())?;
+        }
+        write!(f, "================================\n")
     }
 }
 

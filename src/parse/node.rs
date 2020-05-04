@@ -23,7 +23,7 @@ impl FunctionNode {
     }
     pub fn to_string(&self) -> String {
         let mut s = "".to_owned();
-        s += "AST ==========================\n";
+        s += "AST ============================\n";
         s += &format!("function: {}\n", self.identifier);
         s += &format!("return_type: {}\n", self.return_type);
         s += &format!("argument_types:\n");
@@ -34,7 +34,7 @@ impl FunctionNode {
         for expression in self.block.iter() {
             s += &expression.to_string(1);
         }
-        s += "==============================\n";
+        s += "================================\n";
         s
     }
 }

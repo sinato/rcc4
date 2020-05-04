@@ -10,6 +10,9 @@ fn get_sum(tokens: &mut Tokens) -> Box<ExpressionNode> {
     let mut nodes: Vec<Box<ExpressionNode>> = Vec::new();
     while let Some(_) = tokens.peek() {
         let target_tokens = tokens.consume_to_binary_operator("+".to_owned());
+        if target_tokens.len() == 0 {
+            break;
+        }
         nodes.push(get_multi(&mut Tokens::new(target_tokens)));
     }
     if nodes.len() == 1 {
@@ -26,6 +29,9 @@ fn get_multi(tokens: &mut Tokens) -> Box<ExpressionNode> {
     let mut nodes: Vec<Box<ExpressionNode>> = Vec::new();
     while let Some(_) = tokens.peek() {
         let target_tokens = tokens.consume_to_binary_operator("*".to_owned());
+        if target_tokens.len() == 0 {
+            break;
+        }
         nodes.push(get_number(&mut Tokens::new(target_tokens)));
     }
     if nodes.len() == 1 {

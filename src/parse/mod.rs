@@ -4,11 +4,9 @@ pub mod node;
 use super::tokenize::token::ManagedToken;
 use super::tokenize::tokens::{ParseError, Tokens};
 use expression::parse_expression;
-use node::FunctionNode;
+use node::{ExpressionNode, FunctionNode};
 
-pub fn parse(tokens: Vec<ManagedToken>) -> Result<Box<FunctionNode>, ParseError> {
-    let mut tokens = Tokens::new(tokens);
-
+pub fn parse(mut tokens: Tokens) -> Result<Box<FunctionNode>, ParseError> {
     let return_type = tokens.consume_identifier()?;
     let identifier = tokens.consume_identifier()?;
     tokens.consume_parenthesis()?; // consume (
@@ -16,8 +14,7 @@ pub fn parse(tokens: Vec<ManagedToken>) -> Result<Box<FunctionNode>, ParseError>
     tokens.consume_parenthesis()?; // consume )
 
     tokens.consume_bracket()?; // consume {
-    let res = tokens.consume_expression()?;
-    let expression = *parse_expression(&mut Tokens::new(res));
+    let expression = *parse_return_statement(&mut tokens)?;
     let block = vec![expression];
     tokens.consume_bracket()?; // consume }
 
@@ -30,29 +27,37 @@ pub fn parse(tokens: Vec<ManagedToken>) -> Result<Box<FunctionNode>, ParseError>
     )))
 }
 
+pub fn parse_return_statement(tokens: &mut Tokens) -> Result<Box<ExpressionNode>, ParseError> {
+    tokens.consume_return()?;
+    let expression_node = parse_expression(tokens);
+    tokens.consume_semicolon()?;
+    Ok(expression_node)
+}
+
 #[cfg(test)]
 mod tests {
 
     use self::super::super::tokenize::token::Token;
-    use self::super::node::ExpressionNode;
     use self::super::*;
 
     #[test]
     fn main_func() {
-        let actual = *parse(
+        let actual = *parse(Tokens::new(
             vec![
                 Token::Identifier("int".to_owned()),
                 Token::Identifier("main".to_owned()),
                 Token::Parenthesis("(".to_owned()),
                 Token::Parenthesis(")".to_owned()),
                 Token::Bracket("{".to_owned()),
+                Token::Return,
                 Token::Number(10),
+                Token::Semicolon,
                 Token::Bracket("}".to_owned()),
             ]
             .into_iter()
             .map(|token| ManagedToken::new(token, 0, 0))
             .collect(),
-        )
+        ))
         .unwrap();
 
         let expect = FunctionNode::new(
