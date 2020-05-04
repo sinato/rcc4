@@ -20,6 +20,19 @@ pub fn parse_declare_statement(tokens: &mut Tokens) -> Result<()> {
     return Ok(());
 }
 
+/// parse and get expression_statement
+///
+/// expression_statement := expression_node Token::Semicolon
+pub fn parse_expression_statement(tokens: &mut Tokens) -> Result<()> {
+    if let Some(token) = tokens.peek() {
+        if let Token::Number(_) = token.get_token() {
+            parse_expression_node(tokens)?;
+            tokens.consume_semicolon()?;
+        }
+    }
+    return Ok(());
+}
+
 /// parse and get return_statement
 ///
 /// return_statement := Token::Return expression_node Token::Semicolon

@@ -118,10 +118,21 @@ mod tests {
     }
 
     #[test]
-    fn with_declare() {
+    fn with_declare_statement() {
         let code = "
         int main() {
             int a;
+            return 1 + 2 * 3 + 4;
+        }
+        ";
+        run_test(code, "11");
+    }
+
+    #[test]
+    fn with_expression_statement() {
+        let code = "
+        int main() {
+            1;
             return 1 + 2 * 3 + 4;
         }
         ";
