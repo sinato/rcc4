@@ -29,6 +29,17 @@ impl Tokens {
         self.tokens.len()
     }
 
+    pub fn check_next_operator(&mut self, target_operator: &str) -> Option<&ManagedToken> {
+        if let Some(token) = self.peek() {
+            if let Token::Operator(operator) = token.get_token() {
+                if operator == target_operator {
+                    return Some(token);
+                }
+            }
+        }
+        None
+    }
+
     pub fn consume_expression(&mut self) -> Result<Vec<ManagedToken>> {
         let mut target_tokens: Vec<ManagedToken> = Vec::new();
         while let Some(token) = self.tokens.peek() {
@@ -123,7 +134,7 @@ impl fmt::Display for Tokens {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ConsumeError {
     Consume(Option<ManagedToken>),
 }

@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct ManagedToken {
     token: Token,
     line: u32,
@@ -26,6 +26,11 @@ impl From<ManagedToken> for Token {
     }
 }
 impl fmt::Display for ManagedToken {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.token)
+    }
+}
+impl fmt::Debug for ManagedToken {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.token)
     }
@@ -73,7 +78,7 @@ impl fmt::Display for Token {
             Token::Bracket(bracket) => format!("bracket: {}", bracket),
             Token::Parenthesis(parenthesis) => format!("parenthesis: {}", parenthesis),
             Token::Return => format!("return"),
-            Token::Semicolon => format!(";"),
+            Token::Semicolon => format!("semicolon"),
         };
         write!(f, "{}", string)
     }

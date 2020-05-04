@@ -1,12 +1,16 @@
-mod expression;
+pub mod error;
+pub mod expression;
 pub mod node;
+mod statement;
+pub mod testutil;
 
 use super::tokenize::token::ManagedToken;
-use super::tokenize::tokens::{ConsumeError, Tokens};
-use expression::parse_expression;
-use node::{ExpressionNode, FunctionNode};
+use super::tokenize::tokens::Tokens;
+use error::ParseError;
+use node::FunctionNode;
+use statement::parse_return_statement;
 
-pub fn parse(mut tokens: Tokens) -> Result<Box<FunctionNode>, ConsumeError> {
+pub fn parse(mut tokens: Tokens) -> Result<Box<FunctionNode>, ParseError> {
     let return_type = tokens.consume_identifier()?;
     let identifier = tokens.consume_identifier()?;
     tokens.consume_parenthesis()?; // consume (
@@ -27,18 +31,12 @@ pub fn parse(mut tokens: Tokens) -> Result<Box<FunctionNode>, ConsumeError> {
     )))
 }
 
-pub fn parse_return_statement(tokens: &mut Tokens) -> Result<Box<ExpressionNode>, ConsumeError> {
-    tokens.consume_return()?;
-    let expression_node = parse_expression(tokens);
-    tokens.consume_semicolon()?;
-    Ok(expression_node)
-}
-
 #[cfg(test)]
 mod tests {
 
-    use self::super::super::tokenize::token::Token;
-    use self::super::*;
+    use super::super::tokenize::token::Token;
+    use super::testutil::*;
+    use super::*;
 
     #[test]
     fn main_func() {
@@ -64,7 +62,7 @@ mod tests {
             ManagedToken::new(Token::Identifier("main".to_owned()), 0, 0),
             ManagedToken::new(Token::Identifier("int".to_owned()), 0, 0),
             vec![],
-            vec![ExpressionNode::new(Token::Number(10), vec![])],
+            vec![*num(10)],
         );
         assert_eq!(actual, expect);
     }
