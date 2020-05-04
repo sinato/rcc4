@@ -8,7 +8,7 @@ use super::tokenize::token::ManagedToken;
 use super::tokenize::tokens::Tokens;
 use error::ParseError;
 use node::FunctionNode;
-use statement::parse_return_statement;
+use statement::{parse_declare_statement, parse_return_statement};
 
 pub fn parse(mut tokens: Tokens) -> Result<Box<FunctionNode>, ParseError> {
     let return_type = tokens.consume_type()?;
@@ -18,6 +18,7 @@ pub fn parse(mut tokens: Tokens) -> Result<Box<FunctionNode>, ParseError> {
     tokens.consume_parenthesis()?; // consume )
 
     tokens.consume_bracket()?; // consume {
+    parse_declare_statement(&mut tokens)?;
     let expression = *parse_return_statement(&mut tokens)?;
     let block = vec![expression];
     tokens.consume_bracket()?; // consume }

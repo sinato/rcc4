@@ -15,9 +15,11 @@ pub enum Token {
 ```
 program :=
 Token::Type Token::Identifier Token::Parenthesis("(") Token::Parenthesis(")") Token::Bracket("{")
+    declare_statement?
     return_statement
 Token::Bracket("}")
 
+declare_statement := Token::Type Token::Identifier Token::Semicolon
 return_statement := Token::Return expresssion_node Token::Semicolon
 expression_node := plus_node
 plus_node := mul_node (Token::Operator("+") mul_node)*

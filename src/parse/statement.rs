@@ -1,9 +1,24 @@
+use super::super::tokenize::token::Token;
 use super::super::tokenize::tokens::Tokens;
 use super::error::ParseError;
 use super::expression::parse_expression_node;
 use super::node::ExpressionNode;
 
 type Result<T> = std::result::Result<T, ParseError>;
+
+/// parse and get declare_statement
+///
+/// declare_statement := Token::Type Token::Identifier Token::Semicolon
+pub fn parse_declare_statement(tokens: &mut Tokens) -> Result<()> {
+    if let Some(token) = tokens.peek() {
+        if let Token::Type(_) = token.get_token() {
+            tokens.consume_type()?;
+            tokens.consume_identifier()?;
+            tokens.consume_semicolon()?;
+        }
+    }
+    return Ok(());
+}
 
 /// parse and get return_statement
 ///
@@ -18,7 +33,6 @@ pub fn parse_return_statement(tokens: &mut Tokens) -> Result<Box<ExpressionNode>
 #[cfg(test)]
 mod tests {
 
-    use super::super::super::tokenize::token::Token;
     use super::super::testutil::*;
     use super::*;
 

@@ -116,4 +116,15 @@ mod tests {
         ";
         run_test(code, "11");
     }
+
+    #[test]
+    fn with_declare() {
+        let code = "
+        int main() {
+            int a;
+            return 1 + 2 * 3 + 4;
+        }
+        ";
+        run_test(code, "11");
+    }
 }
