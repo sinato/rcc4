@@ -25,9 +25,12 @@ pub fn parse_declare_statement(tokens: &mut Tokens) -> Result<()> {
 /// expression_statement := expression_node Token::Semicolon
 pub fn parse_expression_statement(tokens: &mut Tokens) -> Result<()> {
     if let Some(token) = tokens.peek() {
-        if let Token::Number(_) = token.get_token() {
-            parse_expression_node(tokens)?;
-            tokens.consume_semicolon()?;
+        match token.get_token() {
+            Token::Number(_) | Token::Identifier(_) => {
+                parse_expression_node(tokens)?;
+                tokens.consume_semicolon()?;
+            }
+            _ => (),
         }
     }
     return Ok(());

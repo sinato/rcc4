@@ -132,7 +132,7 @@ mod tests {
     fn with_expression_statement() {
         let code = "
         int main() {
-            1;
+            a + 1;
             return 1 + 2 * 3 + 4;
         }
         ";
