@@ -39,6 +39,7 @@ impl fmt::Debug for ManagedToken {
 #[derive(PartialEq, Debug, Clone)]
 pub enum Token {
     Number(u64),
+    Type(String),
     Identifier(String),
     Operator(String),
     Bracket(String),
@@ -73,6 +74,7 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let string = match self {
             Token::Number(number) => format!("number: {}", number),
+            Token::Type(ty) => format!("type: {}", ty),
             Token::Identifier(identifier) => format!("identifier: {}", identifier),
             Token::Operator(operator) => format!("operator: {}", operator),
             Token::Bracket(bracket) => format!("bracket: {}", bracket),

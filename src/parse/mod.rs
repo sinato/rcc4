@@ -11,7 +11,7 @@ use node::FunctionNode;
 use statement::parse_return_statement;
 
 pub fn parse(mut tokens: Tokens) -> Result<Box<FunctionNode>, ParseError> {
-    let return_type = tokens.consume_identifier()?;
+    let return_type = tokens.consume_type()?;
     let identifier = tokens.consume_identifier()?;
     tokens.consume_parenthesis()?; // consume (
     let argument_types: Vec<ManagedToken> = vec![];
@@ -42,7 +42,7 @@ mod tests {
     fn main_func() {
         let actual = *parse(Tokens::new(
             vec![
-                Token::Identifier("int".to_owned()),
+                Token::Type("int".to_owned()),
                 Token::Identifier("main".to_owned()),
                 Token::Parenthesis("(".to_owned()),
                 Token::Parenthesis(")".to_owned()),
@@ -60,7 +60,7 @@ mod tests {
 
         let expect = FunctionNode::new(
             ManagedToken::new(Token::Identifier("main".to_owned()), 0, 0),
-            ManagedToken::new(Token::Identifier("int".to_owned()), 0, 0),
+            ManagedToken::new(Token::Type("int".to_owned()), 0, 0),
             vec![],
             vec![*num(10)],
         );

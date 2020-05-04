@@ -59,6 +59,7 @@ impl<'a, 'ctx> Emitter<'a, 'ctx> {
         let i64_type = self.context.i64_type();
         let val = match node.get_operator_clone() {
             Token::Number(num) => i64_type.const_int(num, false),
+            Token::Type(_) => unimplemented!(),
             Token::Identifier(_) => unimplemented!(),
             Token::Operator(op) => {
                 let mut const_nums: Vec<IntValue> = Vec::new();

@@ -93,6 +93,8 @@ impl<'a> Tokenizer<'a> {
         // treat as reserved keyword
         if s == "return" {
             ManagedToken::new(Token::Return, line, location)
+        } else if s == "int" {
+            ManagedToken::new(Token::Type(s), line, location)
         } else {
             ManagedToken::new(Token::Identifier(s), line, location)
         }

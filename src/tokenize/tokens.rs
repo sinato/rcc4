@@ -72,6 +72,16 @@ impl Tokens {
         target_tokens
     }
 
+    pub fn consume_type(&mut self) -> Result<ManagedToken> {
+        match self.tokens.peek() {
+            Some(token) => match token.get_token() {
+                Token::Type(_) => Ok(self.tokens.next().unwrap()),
+                _ => Err(ConsumeError::Consume(Some(token.clone()))),
+            },
+            None => Err(ConsumeError::Consume(None)),
+        }
+    }
+
     pub fn consume_identifier(&mut self) -> Result<ManagedToken> {
         match self.tokens.peek() {
             Some(token) => match token.get_token() {
