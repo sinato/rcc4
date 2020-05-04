@@ -2,11 +2,11 @@ mod expression;
 pub mod node;
 
 use super::tokenize::token::ManagedToken;
-use super::tokenize::tokens::{ParseError, Tokens};
+use super::tokenize::tokens::{ConsumeError, Tokens};
 use expression::parse_expression;
 use node::{ExpressionNode, FunctionNode};
 
-pub fn parse(mut tokens: Tokens) -> Result<Box<FunctionNode>, ParseError> {
+pub fn parse(mut tokens: Tokens) -> Result<Box<FunctionNode>, ConsumeError> {
     let return_type = tokens.consume_identifier()?;
     let identifier = tokens.consume_identifier()?;
     tokens.consume_parenthesis()?; // consume (
@@ -27,7 +27,7 @@ pub fn parse(mut tokens: Tokens) -> Result<Box<FunctionNode>, ParseError> {
     )))
 }
 
-pub fn parse_return_statement(tokens: &mut Tokens) -> Result<Box<ExpressionNode>, ParseError> {
+pub fn parse_return_statement(tokens: &mut Tokens) -> Result<Box<ExpressionNode>, ConsumeError> {
     tokens.consume_return()?;
     let expression_node = parse_expression(tokens);
     tokens.consume_semicolon()?;

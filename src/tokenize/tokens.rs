@@ -4,7 +4,7 @@ use std::fmt;
 use std::iter::Peekable;
 use std::vec::IntoIter;
 
-type Result<T> = std::result::Result<T, ParseError>;
+type Result<T> = std::result::Result<T, ConsumeError>;
 
 #[derive(Debug, Clone)]
 pub struct Tokens {
@@ -65,9 +65,9 @@ impl Tokens {
         match self.tokens.peek() {
             Some(token) => match token.get_token() {
                 Token::Identifier(_) => Ok(self.tokens.next().unwrap()),
-                _ => Err(ParseError::Consume(Some(token.clone()))),
+                _ => Err(ConsumeError::Consume(Some(token.clone()))),
             },
-            None => Err(ParseError::Consume(None)),
+            None => Err(ConsumeError::Consume(None)),
         }
     }
 
@@ -75,9 +75,9 @@ impl Tokens {
         match self.tokens.peek() {
             Some(token) => match token.get_token() {
                 Token::Parenthesis(_) => Ok(self.tokens.next().unwrap()),
-                _ => Err(ParseError::Consume(Some(token.clone()))),
+                _ => Err(ConsumeError::Consume(Some(token.clone()))),
             },
-            None => Err(ParseError::Consume(None)),
+            None => Err(ConsumeError::Consume(None)),
         }
     }
 
@@ -85,9 +85,9 @@ impl Tokens {
         match self.tokens.peek() {
             Some(token) => match token.get_token() {
                 Token::Bracket(_) => Ok(self.tokens.next().unwrap()),
-                _ => Err(ParseError::Consume(Some(token.clone()))),
+                _ => Err(ConsumeError::Consume(Some(token.clone()))),
             },
-            None => Err(ParseError::Consume(None)),
+            None => Err(ConsumeError::Consume(None)),
         }
     }
 
@@ -95,9 +95,9 @@ impl Tokens {
         match self.tokens.peek() {
             Some(token) => match token.get_token() {
                 Token::Return => Ok(self.tokens.next().unwrap()),
-                _ => Err(ParseError::Consume(Some(token.clone()))),
+                _ => Err(ConsumeError::Consume(Some(token.clone()))),
             },
-            None => Err(ParseError::Consume(None)),
+            None => Err(ConsumeError::Consume(None)),
         }
     }
 
@@ -105,9 +105,9 @@ impl Tokens {
         match self.tokens.peek() {
             Some(token) => match token.get_token() {
                 Token::Semicolon => Ok(self.tokens.next().unwrap()),
-                _ => Err(ParseError::Consume(Some(token.clone()))),
+                _ => Err(ConsumeError::Consume(Some(token.clone()))),
             },
-            None => Err(ParseError::Consume(None)),
+            None => Err(ConsumeError::Consume(None)),
         }
     }
 }
@@ -124,14 +124,14 @@ impl fmt::Display for Tokens {
 }
 
 #[derive(Debug)]
-pub enum ParseError {
+pub enum ConsumeError {
     Consume(Option<ManagedToken>),
 }
 
-impl fmt::Display for ParseError {
+impl fmt::Display for ConsumeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ParseError::Consume(optional_token) => match optional_token {
+            ConsumeError::Consume(optional_token) => match optional_token {
                 Some(token) => write!(f, "{:?}", token),
                 None => write!(f, "next token not found"),
             },
@@ -139,10 +139,10 @@ impl fmt::Display for ParseError {
     }
 }
 
-impl Error for ParseError {
+impl Error for ConsumeError {
     fn description(&self) -> &str {
         match *self {
-            ParseError::Consume(_) => "consume error",
+            ConsumeError::Consume(_) => "consume error",
         }
     }
 }
