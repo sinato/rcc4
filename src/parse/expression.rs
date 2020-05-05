@@ -2,15 +2,37 @@ use super::super::tokenize::token::Token;
 use super::super::tokenize::tokens::Tokens;
 use super::error::ParseError;
 use super::util::get_space;
+use std::fmt;
 
 type Result<T> = std::result::Result<T, ParseError>;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ExpressionNode {
-    pub operator: Token,
-    pub operand: Vec<Box<ExpressionNode>>,
+pub enum Operator {
+    Add,
+    Mul,
+    Eq,
+    FnCall(String),
+    Identifier(String),
+    Num(u64),
+}
+impl fmt::Display for Operator {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Operator::Add => write!(f, "operator: +"),
+            Operator::Mul => write!(f, "operator: *"),
+            Operator::Eq => write!(f, "operator: ="),
+            Operator::FnCall(fn_name) => write!(f, "function call: {}", fn_name),
+            Operator::Identifier(identifier) => write!(f, "identifier: {}", identifier),
+            Operator::Num(num) => write!(f, "number: {}", num),
+        }
+    }
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct ExpressionNode {
+    pub operator: Operator,
+    pub operand: Vec<Box<ExpressionNode>>,
+}
 impl ExpressionNode {
     /// parse and get expression_node
     ///
@@ -18,16 +40,22 @@ impl ExpressionNode {
     pub fn parse(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
         parse_eq_node(tokens)
     }
-    pub fn get_operator_clone(&self) -> Token {
+    pub fn get_operator_clone(&self) -> Operator {
         self.operator.clone()
     }
     pub fn get_operand(self) -> Vec<Box<ExpressionNode>> {
         self.operand
     }
-    pub fn create_single_node(token: Token) -> Box<ExpressionNode> {
+    pub fn create_single_node_num(num: u64) -> Box<ExpressionNode> {
         Box::new(ExpressionNode {
-            operator: token,
-            operand: Vec::new(),
+            operator: Operator::Num(num),
+            operand: vec![],
+        })
+    }
+    pub fn create_single_node_ide(identifier: String) -> Box<ExpressionNode> {
+        Box::new(ExpressionNode {
+            operator: Operator::Identifier(identifier),
+            operand: vec![],
         })
     }
     pub fn to_string(&self, tab_level: u32) -> String {
@@ -44,42 +72,62 @@ impl ExpressionNode {
 ///
 /// eq_node := add_node (Token::Operator("=") add_node)*
 fn parse_eq_node(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
-    let operator = Token::Operator("=".to_owned());
     let mut operand = vec![parse_add_node(tokens)?];
 
     while let Some(_token) = tokens.check_next_operator("=") {
         tokens.next(); // consume "="
         operand.push(parse_add_node(tokens)?);
     }
-    Ok(reduce_redundunt_binary_operation(operator, operand))
+    Ok(reduce_redundunt_binary_operation(Operator::Eq, operand))
 }
 
 /// parse and get add_node
 ///
 /// add_node := mul_node (Token::Operator("+") mul_node)*
 fn parse_add_node(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
-    let operator = Token::Operator("+".to_owned());
     let mut operand = vec![parse_mul_node(tokens)?];
 
     while let Some(_token) = tokens.check_next_operator("+") {
         tokens.next(); // consume "+"
         operand.push(parse_mul_node(tokens)?);
     }
-    Ok(reduce_redundunt_binary_operation(operator, operand))
+    Ok(reduce_redundunt_binary_operation(Operator::Add, operand))
 }
 
 /// parse and get mul_node
 ///
-/// mul_node := leaf_node (Token::Operator("*") leaf_node)*
+/// mul_node := fn_call_node (Token::Operator("*") fn_call_node)*
 fn parse_mul_node(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
-    let operator = Token::Operator("*".to_owned());
-    let mut operand = vec![parse_leaf_node(tokens)?];
+    let mut operand = vec![parse_fn_call_node(tokens)?];
 
     while let Some(_token) = tokens.check_next_operator("*") {
         tokens.next(); // consume "*"
-        operand.push(parse_leaf_node(tokens)?);
+        operand.push(parse_fn_call_node(tokens)?);
     }
-    Ok(reduce_redundunt_binary_operation(operator, operand))
+    Ok(reduce_redundunt_binary_operation(Operator::Mul, operand))
+}
+
+/// parse and get fn_call_node (function call node)
+///
+/// fn_call_node := Token::Identifier (Token::Parenthesis("(") Token::Parenthesis(")")) | leaf_node
+fn parse_fn_call_node(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
+    // match Token::Identifier Token::Parenthesis
+    if let Some(token) = tokens.peek() {
+        if let Token::Identifier(_) = token.get_token() {
+            if let Some(token2) = tokens.peek2() {
+                if let Token::Parenthesis(_) = token2.get_token() {
+                    let identifier = tokens.next().unwrap().get_token().get_identifier().unwrap();
+                    tokens.next(); // consume (
+                    tokens.next(); // consume )
+                    return Ok(Box::new(ExpressionNode {
+                        operator: Operator::FnCall(identifier),
+                        operand: vec![],
+                    }));
+                }
+            }
+        }
+    }
+    parse_leaf_node(tokens)
 }
 
 /// parse and get leaf_node
@@ -88,14 +136,12 @@ fn parse_mul_node(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
 fn parse_leaf_node(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
     if let Some(token) = tokens.peek() {
         if let Token::Number(_) = token.get_token() {
-            return Ok(ExpressionNode::create_single_node(
-                tokens.next().unwrap().get_token().to_owned(),
-            ));
+            let num = tokens.next().unwrap().get_token().get_number().unwrap();
+            return Ok(ExpressionNode::create_single_node_num(num));
         }
         if let Token::Identifier(_) = token.get_token() {
-            return Ok(ExpressionNode::create_single_node(
-                tokens.next().unwrap().get_token().to_owned(),
-            ));
+            let identifier = tokens.next().unwrap().get_token().get_identifier().unwrap();
+            return Ok(ExpressionNode::create_single_node_ide(identifier));
         }
     }
     Err(ParseError::Unexpect(tokens.next()))
@@ -105,7 +151,7 @@ fn parse_leaf_node(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
 /// from "root - operator - [num]"
 /// to "root - num"
 fn reduce_redundunt_binary_operation(
-    operator: Token,
+    operator: Operator,
     operand: Vec<Box<ExpressionNode>>,
 ) -> Box<ExpressionNode> {
     if operand.len() == 1 {
@@ -238,6 +284,35 @@ mod tests {
             let actual = parse_mul_node(&mut tokens).unwrap();
             let expect = exp("*", vec![num(10), num(20)]);
             assert_eq!(actual, expect);
+        }
+    }
+
+    #[cfg(test)]
+    mod tests_parse_fn_call_node {
+        use super::*;
+
+        #[test]
+        fn pass_leaf_node() {
+            let mut tokens = Tokens::new(vec![ManagedToken::new(Token::Number(10), 0, 0)]);
+            let actual = parse_fn_call_node(&mut tokens).unwrap();
+            assert_eq!(actual, num(10));
+        }
+
+        #[test]
+        fn pass_fn_call_node() {
+            let mut tokens = Tokens::new(vec![
+                ManagedToken::new(Token::Identifier("func".to_owned()), 0, 0),
+                ManagedToken::new(Token::Parenthesis("(".to_owned()), 0, 0),
+                ManagedToken::new(Token::Parenthesis(")".to_owned()), 0, 0),
+            ]);
+            let actual = *parse_fn_call_node(&mut tokens).unwrap();
+            assert_eq!(
+                actual,
+                ExpressionNode {
+                    operator: Operator::FnCall("func".to_owned()),
+                    operand: vec![]
+                }
+            );
         }
     }
 

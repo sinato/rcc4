@@ -28,6 +28,7 @@ return_statement := Token::Return expresssion_node Token::Semicolon
 expression_node := eq_node
 eq_node := plus_node (Token::Operator("=") plus_node)*
 plus_node := mul_node (Token::Operator("+") mul_node)*
-mul_node := leaf_node (Token::Operator("*") leaf_node)*
+mul_node := fn_call_node (Token::Operator("*") fn_call_node)*
+fn_call_node := Token::Identifier (Token::Parenthesis("(") Token::Parenthesis(")")) | leaf_node
 leaf_node := Token::Number | Token::Identifier
 ```

@@ -1,4 +1,4 @@
-use super::super::tokenize::token::{Token, TokenError};
+use super::super::tokenize::token::TokenError;
 use inkwell::support::LLVMString;
 use std::error::Error;
 use std::fmt;
@@ -8,7 +8,7 @@ pub enum CompileError {
     Emit(TokenError),
     LLVM(LLVMString),
     Undeclared(String),
-    Unexpect(Token),
+    Unexpect(String),
     NotFound(String),
 }
 

@@ -6,9 +6,7 @@ int func() {
     return 5;
 }
 int main() {
-    int a; a = 10;
-    int b; b = 3;
-    return a + b * 2;
+    return func();
 }"
     .to_owned();
     rcc4::compile(code);

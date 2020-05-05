@@ -151,4 +151,18 @@ mod tests {
         ";
         run_test(code, "88");
     }
+
+    #[test]
+    fn function_call() {
+        let code = "
+        int func() {
+            return 5;
+        }
+        int main() {
+            int a; a = 77;
+            return a + func();
+        }
+        ";
+        run_test(code, "82");
+    }
 }

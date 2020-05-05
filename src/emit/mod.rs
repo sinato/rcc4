@@ -1,10 +1,9 @@
 mod error;
 
-use super::parse::expression::ExpressionNode;
+use super::parse::expression::{ExpressionNode, Operator};
 use super::parse::function::Function;
 use super::parse::program::Program;
 use super::parse::statement::{DeclareStatement, ExpressionStatement, ReturnStatement, Statement};
-use super::tokenize::token::Token;
 use error::CompileError;
 use inkwell::builder::Builder;
 use inkwell::context::Context;
@@ -57,12 +56,9 @@ impl<'a, 'ctx> Emitter<'a, 'ctx> {
 
     fn emit_program(&self, program: Program) -> Result<()> {
         for function in program.functions {
-            if function.identifier.get_token().get_identifier()? == "main" {
-                self.emit_function(function)?;
-                return Ok(());
-            }
+            self.emit_function(function)?;
         }
-        Err(CompileError::NotFound("main function".to_owned()))
+        return Ok(());
     }
 
     fn emit_function(&self, function: Function) -> Result<()> {
@@ -135,10 +131,53 @@ impl<'a, 'ctx> Emitter<'a, 'ctx> {
         environment: &'a Environment,
     ) -> Result<IntValue<'a>> {
         let i64_type = self.context.i64_type();
+
         match node.get_operator_clone() {
-            Token::Number(num) => Ok(i64_type.const_int(num, false)),
-            Token::Type(_) => unimplemented!(),
-            Token::Identifier(identifier) => {
+            Operator::Add => {
+                let mut const_nums: Vec<IntValue> = Vec::new();
+                for operand in node.get_operand().into_iter() {
+                    const_nums.push(self.emit_expression_node(*operand, environment)?);
+                }
+                let mut reduced = i64_type.const_int(0, false);
+                for const_num in const_nums.into_iter() {
+                    reduced = self.builder.build_int_add(reduced, const_num, "sum");
+                }
+                Ok(reduced)
+            }
+            Operator::Mul => {
+                let mut const_nums: Vec<IntValue> = Vec::new();
+                for operand in node.get_operand().into_iter() {
+                    const_nums.push(self.emit_expression_node(*operand, environment)?);
+                }
+                let mut reduced = i64_type.const_int(1, false);
+                for const_num in const_nums.into_iter() {
+                    reduced = self.builder.build_int_mul(reduced, const_num, "mul");
+                }
+                Ok(reduced)
+            }
+            Operator::Eq => {
+                let mut operand_itr = node.get_operand().into_iter();
+                let lhs: PointerValue =
+                    self.emit_expression_node_as_lhs(*operand_itr.next().unwrap(), environment)?;
+                let rhs: IntValue =
+                    self.emit_expression_node(*operand_itr.next().unwrap(), environment)?;
+                self.builder.build_store(lhs, rhs);
+                Ok(rhs)
+            }
+            Operator::FnCall(function_name) => {
+                if let Some(fn_value) = self.module.get_function(&function_name) {
+                    let func_calls_site = self.builder.build_call(fn_value, &[], "func_call");
+                    Ok(func_calls_site
+                        .try_as_basic_value()
+                        .left()
+                        .unwrap()
+                        .into_int_value())
+                } else {
+                    Err(CompileError::NotFound("function".to_owned()))
+                }
+            }
+            Operator::Num(num) => Ok(i64_type.const_int(num, false)),
+            Operator::Identifier(identifier) => {
                 let variable_pointer = environment.get(&identifier);
                 if let Some(variable_pointer) = variable_pointer {
                     let value = self
@@ -150,44 +189,6 @@ impl<'a, 'ctx> Emitter<'a, 'ctx> {
                     Err(CompileError::Undeclared(identifier))
                 }
             }
-            Token::Operator(op) => match op.as_ref() {
-                "+" => {
-                    let mut const_nums: Vec<IntValue> = Vec::new();
-                    for operand in node.get_operand().into_iter() {
-                        const_nums.push(self.emit_expression_node(*operand, environment)?);
-                    }
-                    let mut reduced = i64_type.const_int(0, false);
-                    for const_num in const_nums.into_iter() {
-                        reduced = self.builder.build_int_add(reduced, const_num, "sum");
-                    }
-                    Ok(reduced)
-                }
-                "*" => {
-                    let mut const_nums: Vec<IntValue> = Vec::new();
-                    for operand in node.get_operand().into_iter() {
-                        const_nums.push(self.emit_expression_node(*operand, environment)?);
-                    }
-                    let mut reduced = i64_type.const_int(1, false);
-                    for const_num in const_nums.into_iter() {
-                        reduced = self.builder.build_int_mul(reduced, const_num, "mul");
-                    }
-                    Ok(reduced)
-                }
-                "=" => {
-                    let mut operand_itr = node.get_operand().into_iter();
-                    let lhs: PointerValue = self
-                        .emit_expression_node_as_lhs(*operand_itr.next().unwrap(), environment)?;
-                    let rhs: IntValue =
-                        self.emit_expression_node(*operand_itr.next().unwrap(), environment)?;
-                    self.builder.build_store(lhs, rhs);
-                    Ok(rhs)
-                }
-                _ => unimplemented!(),
-            },
-            Token::Bracket(_) => unimplemented!(),
-            Token::Parenthesis(_) => unimplemented!(),
-            Token::Return => unimplemented!(),
-            Token::Semicolon => unimplemented!(),
         }
     }
 
@@ -197,14 +198,17 @@ impl<'a, 'ctx> Emitter<'a, 'ctx> {
         environment: &'a Environment,
     ) -> Result<PointerValue<'a>> {
         match node.get_operator_clone() {
-            Token::Identifier(identifier) => {
+            Operator::Identifier(identifier) => {
                 if let Some(pointer_value) = environment.get(&identifier) {
                     Ok(pointer_value)
                 } else {
                     Err(CompileError::Undeclared(identifier))
                 }
             }
-            _ => Err(CompileError::Unexpect(node.get_operator_clone())),
+            _ => Err(CompileError::Unexpect(format!(
+                "{:?}",
+                node.get_operator_clone()
+            ))),
         }
     }
 }

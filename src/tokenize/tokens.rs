@@ -17,8 +17,15 @@ impl Tokens {
         }
     }
 
-    pub fn peek(&mut self) -> Option<&ManagedToken> {
-        self.tokens.peek()
+    pub fn peek(&self) -> Option<ManagedToken> {
+        let mut tokens = self.clone();
+        tokens.next()
+    }
+
+    pub fn peek2(&self) -> Option<ManagedToken> {
+        let mut tokens = self.clone();
+        tokens.next();
+        tokens.next()
     }
 
     pub fn next(&mut self) -> Option<ManagedToken> {
@@ -29,7 +36,7 @@ impl Tokens {
         self.tokens.len()
     }
 
-    pub fn check_next_operator(&mut self, target_operator: &str) -> Option<&ManagedToken> {
+    pub fn check_next_operator(&mut self, target_operator: &str) -> Option<ManagedToken> {
         if let Some(token) = self.peek() {
             if let Token::Operator(operator) = token.get_token() {
                 if operator == target_operator {
@@ -171,12 +178,12 @@ impl Error for ConsumeError {
 #[cfg(test)]
 mod tests {
 
-    use self::super::*;
+    use super::*;
 
     #[cfg(test)]
     mod consumer {
 
-        use self::super::*;
+        use super::*;
 
         #[test]
         fn consume_to_binary_operator_add() {
