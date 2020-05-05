@@ -1,15 +1,43 @@
 use super::super::tokenize::token::Token;
 use super::super::tokenize::tokens::Tokens;
 use super::error::ParseError;
-use super::node::ExpressionNode;
+use super::util::get_space;
 
 type Result<T> = std::result::Result<T, ParseError>;
 
-/// parse and get expression_node
-///
-/// expression_node := eq_node
-pub fn parse_expression_node(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
-    parse_eq_node(tokens)
+#[derive(Clone, Debug, PartialEq)]
+pub struct ExpressionNode {
+    pub operator: Token,
+    pub operand: Vec<Box<ExpressionNode>>,
+}
+
+impl ExpressionNode {
+    /// parse and get expression_node
+    ///
+    /// expression_node := eq_node
+    pub fn parse(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
+        parse_eq_node(tokens)
+    }
+    pub fn get_operator_clone(&self) -> Token {
+        self.operator.clone()
+    }
+    pub fn get_operand(self) -> Vec<Box<ExpressionNode>> {
+        self.operand
+    }
+    pub fn create_single_node(token: Token) -> Box<ExpressionNode> {
+        Box::new(ExpressionNode {
+            operator: token,
+            operand: Vec::new(),
+        })
+    }
+    pub fn to_string(&self, tab_level: u32) -> String {
+        let mut s = "".to_owned();
+        s += &format!("{}{}\n", get_space(tab_level), self.operator);
+        for val in self.operand.iter() {
+            s += &format!("{}{}", get_space(tab_level), val.to_string(tab_level + 1));
+        }
+        s
+    }
 }
 
 /// parse and get eq_node
@@ -96,7 +124,8 @@ mod tests {
 
     #[cfg(test)]
     mod tests_parse_eq_node {
-        use self::super::*;
+
+        use super::*;
 
         #[test]
         fn pass_one_term() {
@@ -136,7 +165,7 @@ mod tests {
 
     #[cfg(test)]
     mod tests_parse_add_node {
-        use self::super::*;
+        use super::*;
 
         #[test]
         fn pass_one_term() {
@@ -176,7 +205,7 @@ mod tests {
 
     #[cfg(test)]
     mod tests_parse_mul_node {
-        use self::super::*;
+        use super::*;
 
         #[test]
         fn pass_one_term() {
@@ -214,7 +243,7 @@ mod tests {
 
     #[cfg(test)]
     mod tests_parse_leaf_node {
-        use self::super::*;
+        use super::*;
 
         #[test]
         fn pass() {

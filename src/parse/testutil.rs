@@ -1,5 +1,5 @@
 use super::super::tokenize::token::{ManagedToken, Token};
-use super::node::ExpressionNode;
+use super::expression::ExpressionNode;
 
 pub fn mtoken(token: Token) -> ManagedToken {
     ManagedToken::new(token, 0, 0)

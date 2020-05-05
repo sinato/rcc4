@@ -48,7 +48,7 @@ pub fn run() -> String {
 #[cfg(test)]
 mod tests {
 
-    use self::super::*;
+    use super::*;
 
     fn run_test(code: &str, expect: &str) {
         compile(code.to_owned());

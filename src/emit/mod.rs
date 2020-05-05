@@ -1,6 +1,7 @@
 mod error;
 
-use super::parse::node::{ExpressionNode, FunctionNode};
+use super::parse::expression::ExpressionNode;
+use super::parse::program::Program;
 use super::tokenize::token::Token;
 use error::CompileError;
 use inkwell::builder::Builder;
@@ -20,7 +21,7 @@ impl<'a, 'ctx> Emitter<'a, 'ctx> {
         context: &'ctx Context,
         builder: &'a Builder<'ctx>,
         module: &'a Module<'ctx>,
-        node: FunctionNode,
+        node: Program,
     ) -> Result<(), CompileError> {
         let emitter = Emitter {
             context,
@@ -30,7 +31,7 @@ impl<'a, 'ctx> Emitter<'a, 'ctx> {
         emitter.emit_function(node)
     }
 
-    fn emit_function(&self, node: FunctionNode) -> Result<(), CompileError> {
+    fn emit_function(&self, node: Program) -> Result<(), CompileError> {
         let identifier = node.identifier.get_token().get_identifier()?;
         let _return_type = node.return_type;
         let _argument_types = node.argument_types;
