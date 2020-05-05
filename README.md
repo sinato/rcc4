@@ -23,7 +23,8 @@ Token::Bracket("}")
 declare_statement := token::type token::identifier token::semicolon
 expression_statement := expression_node token::semicolon
 return_statement := Token::Return expresssion_node Token::Semicolon
-expression_node := plus_node
+expression_node := eq_node
+eq_node := plus_node (Token::Operator("=") plus_node)*
 plus_node := mul_node (Token::Operator("+") mul_node)*
 mul_node := leaf_node (Token::Operator("*") leaf_node)*
 leaf_node := Token::Number | Token::Identifier

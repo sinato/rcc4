@@ -26,7 +26,7 @@ impl<'a> Tokenizer<'a> {
         while let Some(c) = tokenizer.peek() {
             if c.is_ascii_digit() {
                 tokens.push(tokenizer.consume_number());
-            } else if c == &'+' || c == &'*' {
+            } else if c == &'+' || c == &'*' || c == &'=' {
                 tokens.push(tokenizer.consume_operator());
             } else if c == &'{' || c == &'}' {
                 tokens.push(tokenizer.consume_bracket());

@@ -4,8 +4,8 @@ fn main() {
     let code = "
 int main() {
     int a;
-    a;
-    return 1;
+    a = 10;
+    return 1 + 2 * 3 + 4;
 }"
     .to_owned();
     rcc4::compile(code);
