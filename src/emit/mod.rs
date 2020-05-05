@@ -1,6 +1,7 @@
 mod error;
 
 use super::parse::expression::ExpressionNode;
+use super::parse::function::Function;
 use super::parse::program::Program;
 use super::parse::statement::{DeclareStatement, ExpressionStatement, ReturnStatement, Statement};
 use super::tokenize::token::Token;
@@ -44,32 +45,42 @@ impl<'a, 'ctx> Emitter<'a, 'ctx> {
         context: &'ctx Context,
         builder: &'a Builder<'ctx>,
         module: &'a Module<'ctx>,
-        node: Program,
+        program: Program,
     ) -> Result<()> {
         let emitter = Emitter {
             context,
             builder,
             module,
         };
-        emitter.emit_function(node)
+        emitter.emit_program(program)
     }
 
-    fn emit_function(&self, node: Program) -> Result<()> {
-        let identifier = node.identifier.get_token().get_identifier()?;
-        let _return_type = node.return_type;
-        let _argument_types = node.argument_types;
+    fn emit_program(&self, program: Program) -> Result<()> {
+        for function in program.functions {
+            if function.identifier.get_token().get_identifier()? == "main" {
+                self.emit_function(function)?;
+                return Ok(());
+            }
+        }
+        Err(CompileError::NotFound("main function".to_owned()))
+    }
+
+    fn emit_function(&self, function: Function) -> Result<()> {
+        let identifier = function.identifier.get_token().get_identifier()?;
+        let _return_type = function.return_type;
+        let _argument_types = function.argument_types;
 
         let i64_type = self.context.i64_type();
 
-        let function = self
-            .module
-            .add_function(&identifier, i64_type.fn_type(&[], false), None);
+        let function_value =
+            self.module
+                .add_function(&identifier, i64_type.fn_type(&[], false), None);
 
-        let basic_block = self.context.append_basic_block(function, "entry");
+        let basic_block = self.context.append_basic_block(function_value, "entry");
         let mut environment = Environment::new();
         self.builder.position_at_end(basic_block);
 
-        for statement in node.block.into_iter() {
+        for statement in function.block.into_iter() {
             match statement {
                 Statement::Declare(statement) => {
                     self.emit_declare_statement(statement, &mut environment)?
@@ -79,7 +90,7 @@ impl<'a, 'ctx> Emitter<'a, 'ctx> {
                 }
             }
         }
-        self.emit_return_statement(node.return_statement, &environment)?;
+        self.emit_return_statement(function.return_statement, &environment)?;
 
         self.module
             .print_to_file(path::Path::new("compiled.ll"))

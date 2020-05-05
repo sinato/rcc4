@@ -13,7 +13,9 @@ pub enum Token {
 ```
 
 ```
-program :=
+program := function+
+
+function :=
 Token::Type Token::Identifier Token::Parenthesis("(") Token::Parenthesis(")") Token::Bracket("{")
     statement*
     return_statement

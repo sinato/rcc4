@@ -15,11 +15,11 @@ pub fn compile(code: String) {
     println!("================================\n");
 
     // tokenize
-    let tokens = Tokens::new(Tokenizer::tokenize(&code));
+    let mut tokens = Tokens::new(Tokenizer::tokenize(&code));
     println!("{}", tokens);
 
     // parse
-    let node = match parse::parse(tokens) {
+    let node = match parse::parse(&mut tokens) {
         Ok(node) => node,
         Err(err) => panic!(err.to_string()),
     };

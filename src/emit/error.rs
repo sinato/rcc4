@@ -9,6 +9,7 @@ pub enum CompileError {
     LLVM(LLVMString),
     Undeclared(String),
     Unexpect(Token),
+    NotFound(String),
 }
 
 impl fmt::Display for CompileError {
@@ -20,6 +21,7 @@ impl fmt::Display for CompileError {
                 write!(f, "undeclared identifier {}", identifier)
             }
             CompileError::Unexpect(token) => write!(f, "unexpected token {}", token),
+            CompileError::NotFound(cause) => write!(f, "{} not found", cause),
         }
     }
 }
@@ -31,6 +33,7 @@ impl Error for CompileError {
             CompileError::LLVM(_) => "llvm error",
             CompileError::Undeclared(_) => "undeclared",
             CompileError::Unexpect(_) => "unexpected",
+            CompileError::NotFound(_) => "notfound",
         }
     }
 }
