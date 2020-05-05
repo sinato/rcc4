@@ -20,7 +20,7 @@ pub fn compile(code: String) {
 
     // parse
     let node = match parse::parse(tokens) {
-        Ok(node) => *node,
+        Ok(node) => node,
         Err(err) => panic!(err.to_string()),
     };
     println!("{}", node.to_string());
@@ -138,5 +138,17 @@ mod tests {
         }
         ";
         run_test(code, "11");
+    }
+
+    #[test]
+    fn variable() {
+        let code = "
+        int main() {
+            int a; a = 77;
+            int b; b = 11;
+            return a + b;
+        }
+        ";
+        run_test(code, "88");
     }
 }

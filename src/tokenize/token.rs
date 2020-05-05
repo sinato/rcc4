@@ -56,6 +56,13 @@ impl Token {
         Err(TokenError::UnexpectedType(self.clone()))
     }
 
+    pub fn get_type(&self) -> Result<String, TokenError> {
+        if let Token::Type(ty) = self {
+            return Ok(ty.to_owned());
+        }
+        Err(TokenError::UnexpectedType(self.clone()))
+    }
+
     pub fn get_number(&self) -> Result<u64, TokenError> {
         if let Token::Number(num) = self {
             return Ok(*num);

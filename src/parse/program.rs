@@ -2,8 +2,7 @@ use super::super::tokenize::token::ManagedToken;
 
 use super::super::tokenize::tokens::Tokens;
 use super::error::ParseError;
-use super::expression::ExpressionNode;
-use super::statement::{DeclareStatement, ExpressionStatement, ReturnStatement};
+use super::statement::{ReturnStatement, Statement};
 
 type Result<T> = std::result::Result<T, ParseError>;
 
@@ -12,24 +11,11 @@ pub struct Program {
     pub identifier: ManagedToken,
     pub return_type: ManagedToken,
     pub argument_types: Vec<ManagedToken>,
-    pub block: Vec<ExpressionNode>,
+    pub block: Vec<Statement>,
+    pub return_statement: ReturnStatement,
 }
 impl Program {
-    pub fn new(
-        identifier: ManagedToken,
-        return_type: ManagedToken,
-        argument_types: Vec<ManagedToken>,
-        block: Vec<ExpressionNode>,
-    ) -> Program {
-        Program {
-            identifier,
-            return_type,
-            argument_types,
-            block,
-        }
-    }
-
-    pub fn parse(mut tokens: Tokens) -> Result<Box<Program>> {
+    pub fn parse(mut tokens: Tokens) -> Result<Program> {
         let return_type = tokens.consume_type()?;
         let identifier = tokens.consume_identifier()?;
         tokens.consume_parenthesis()?; // consume (
@@ -37,19 +23,22 @@ impl Program {
         tokens.consume_parenthesis()?; // consume )
 
         tokens.consume_bracket()?; // consume {
-        DeclareStatement::parse(&mut tokens)?;
-        ExpressionStatement::parse(&mut tokens)?;
-        let expression = *ReturnStatement::parse(&mut tokens)?;
-        let block = vec![expression];
+
+        let mut block = vec![];
+        while let Some(statement) = Statement::parse(&mut tokens)? {
+            block.push(statement)
+        }
+        let return_statement = ReturnStatement::parse(&mut tokens)?;
         tokens.consume_bracket()?; // consume }
 
         assert!(tokens.len() == 0);
-        Ok(Box::new(Program::new(
+        Ok(Program {
             identifier,
             return_type,
             argument_types,
             block,
-        )))
+            return_statement,
+        })
     }
 
     pub fn to_string(&self) -> String {
@@ -62,9 +51,11 @@ impl Program {
             s += &format!("{:?}\n", argument);
         }
         s += &format!("block:\n");
-        for expression in self.block.iter() {
-            s += &expression.to_string(1);
+        for statement in self.block.iter() {
+            s += &format!("{}", statement.to_string(1));
         }
+        s += &format!("return_statement:\n");
+        s += &self.return_statement.expression_node.to_string(1);
         s += "================================\n";
         s
     }
@@ -79,7 +70,7 @@ mod tests {
 
     #[test]
     fn main_func() {
-        let actual = *Program::parse(Tokens::new(
+        let actual = Program::parse(Tokens::new(
             vec![
                 Token::Type("int".to_owned()),
                 Token::Identifier("main".to_owned()),
@@ -97,12 +88,15 @@ mod tests {
         ))
         .unwrap();
 
-        let expect = Program::new(
-            ManagedToken::new(Token::Identifier("main".to_owned()), 0, 0),
-            ManagedToken::new(Token::Type("int".to_owned()), 0, 0),
-            vec![],
-            vec![*num(10)],
-        );
+        let expect = Program {
+            identifier: mtoken(Token::Identifier("main".to_owned())),
+            return_type: mtoken(Token::Type("int".to_owned())),
+            argument_types: vec![],
+            block: vec![],
+            return_statement: ReturnStatement {
+                expression_node: *num(10),
+            },
+        };
         assert_eq!(actual, expect);
     }
 }

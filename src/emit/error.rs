@@ -1,4 +1,4 @@
-use super::super::tokenize::token::TokenError;
+use super::super::tokenize::token::{Token, TokenError};
 use inkwell::support::LLVMString;
 use std::error::Error;
 use std::fmt;
@@ -7,6 +7,8 @@ use std::fmt;
 pub enum CompileError {
     Emit(TokenError),
     LLVM(LLVMString),
+    Undeclared(String),
+    Unexpect(Token),
 }
 
 impl fmt::Display for CompileError {
@@ -14,6 +16,10 @@ impl fmt::Display for CompileError {
         match self {
             CompileError::Emit(err) => write!(f, "{}", err.to_string()),
             CompileError::LLVM(err) => write!(f, "{}", err.to_string()),
+            CompileError::Undeclared(identifier) => {
+                write!(f, "undeclared identifier {}", identifier)
+            }
+            CompileError::Unexpect(token) => write!(f, "unexpected token {}", token),
         }
     }
 }
@@ -23,6 +29,8 @@ impl Error for CompileError {
         match *self {
             CompileError::Emit(_) => "compile error",
             CompileError::LLVM(_) => "llvm error",
+            CompileError::Undeclared(_) => "undeclared",
+            CompileError::Unexpect(_) => "unexpected",
         }
     }
 }

@@ -15,11 +15,11 @@ pub enum Token {
 ```
 program :=
 Token::Type Token::Identifier Token::Parenthesis("(") Token::Parenthesis(")") Token::Bracket("{")
-    declare_statement?
-    expression_statement?
+    statement*
     return_statement
 Token::Bracket("}")
 
+statement := declare_statement | expression_statement
 declare_statement := token::type token::identifier token::semicolon
 expression_statement := expression_node token::semicolon
 return_statement := Token::Return expresssion_node Token::Semicolon
