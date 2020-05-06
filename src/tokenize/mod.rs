@@ -36,6 +36,8 @@ impl<'a> Tokenizer<'a> {
                 tokenizer.next();
             } else if c == &';' {
                 tokens.push(tokenizer.consume_semicolon());
+            } else if c == &',' {
+                tokens.push(tokenizer.consume_comma());
             } else if c.is_ascii_alphabetic() {
                 tokens.push(tokenizer.consume_identifier());
             } else {
@@ -126,17 +128,23 @@ impl<'a> Tokenizer<'a> {
         self.next();
         ManagedToken::new(Token::Semicolon, line, location)
     }
+    fn consume_comma(&mut self) -> ManagedToken {
+        let line = self.cursor_line;
+        let location = self.cursor_location;
+        self.next();
+        ManagedToken::new(Token::Comma, line, location)
+    }
 }
 
 #[cfg(test)]
 mod tests {
 
-    use self::super::*;
+    use super::*;
 
     #[cfg(test)]
     mod consumer {
 
-        use self::super::*;
+        use super::*;
 
         fn run(code: String) -> Token {
             let mut tokenizer = Tokenizer::new(&code);

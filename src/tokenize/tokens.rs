@@ -47,6 +47,18 @@ impl Tokens {
         None
     }
 
+    pub fn check_next_is_expression_node(&self) -> bool {
+        if let Some(token) = self.peek() {
+            if let Token::Identifier(_) = token.get_token() {
+                return true;
+            }
+            if let Token::Number(_) = token.get_token() {
+                return true;
+            }
+        }
+        false
+    }
+
     pub fn consume_expression(&mut self) -> Result<Vec<ManagedToken>> {
         let mut target_tokens: Vec<ManagedToken> = Vec::new();
         while let Some(token) = self.tokens.peek() {
@@ -123,6 +135,16 @@ impl Tokens {
         match self.tokens.peek() {
             Some(token) => match token.get_token() {
                 Token::Return => Ok(self.tokens.next().unwrap()),
+                _ => Err(ConsumeError::Consume(Some(token.clone()))),
+            },
+            None => Err(ConsumeError::Consume(None)),
+        }
+    }
+
+    pub fn consume_comma(&mut self) -> Result<ManagedToken> {
+        match self.tokens.peek() {
+            Some(token) => match token.get_token() {
+                Token::Comma => Ok(self.tokens.next().unwrap()),
                 _ => Err(ConsumeError::Consume(Some(token.clone()))),
             },
             None => Err(ConsumeError::Consume(None)),

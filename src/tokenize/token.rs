@@ -45,6 +45,7 @@ pub enum Token {
     Bracket(String),
     Parenthesis(String),
     Return,
+    Comma,
     Semicolon,
 }
 
@@ -87,6 +88,7 @@ impl fmt::Display for Token {
             Token::Bracket(bracket) => format!("bracket: {}", bracket),
             Token::Parenthesis(parenthesis) => format!("parenthesis: {}", parenthesis),
             Token::Return => format!("return"),
+            Token::Comma => format!("comma"),
             Token::Semicolon => format!("semicolon"),
         };
         write!(f, "{}", string)

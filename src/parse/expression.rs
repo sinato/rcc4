@@ -62,7 +62,7 @@ impl ExpressionNode {
         let mut s = "".to_owned();
         s += &format!("{}{}\n", get_space(tab_level), self.operator);
         for val in self.operand.iter() {
-            s += &format!("{}{}", get_space(tab_level), val.to_string(tab_level + 1));
+            s += &format!("{}", val.to_string(tab_level + 1));
         }
         s
     }
@@ -109,7 +109,7 @@ fn parse_mul_node(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
 
 /// parse and get fn_call_node (function call node)
 ///
-/// fn_call_node := Token::Identifier (Token::Parenthesis("(") Token::Parenthesis(")")) | leaf_node
+/// fn_call_node := Token::Identifier Token::Parenthesis("(") (expression_node (Token::Comma expresssion_node)*)? Token::Parenthesis(")") | leaf_node
 fn parse_fn_call_node(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
     // match Token::Identifier Token::Parenthesis
     if let Some(token) = tokens.peek() {
@@ -118,10 +118,27 @@ fn parse_fn_call_node(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
                 if let Token::Parenthesis(_) = token2.get_token() {
                     let identifier = tokens.next().unwrap().get_token().get_identifier().unwrap();
                     tokens.next(); // consume (
+
+                    // match (expression_node (Token::Comma expresssion_node)*)?
+                    let mut parameters: Vec<Box<ExpressionNode>> = vec![];
+                    if tokens.check_next_is_expression_node() {
+                        parameters.push(ExpressionNode::parse(tokens)?);
+                    }
+                    loop {
+                        if let Some(token) = tokens.peek() {
+                            if let Token::Comma = token.get_token() {
+                                tokens.next(); // consume ,
+                                parameters.push(ExpressionNode::parse(tokens)?);
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+
                     tokens.next(); // consume )
                     return Ok(Box::new(ExpressionNode {
                         operator: Operator::FnCall(identifier),
-                        operand: vec![],
+                        operand: parameters,
                     }));
                 }
             }

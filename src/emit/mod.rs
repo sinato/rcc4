@@ -8,7 +8,8 @@ use error::CompileError;
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;
-use inkwell::values::{IntValue, PointerValue};
+use inkwell::types::BasicTypeEnum;
+use inkwell::values::{BasicValueEnum, IntValue, PointerValue};
 use std::collections::HashMap;
 use std::path;
 
@@ -64,17 +65,35 @@ impl<'a, 'ctx> Emitter<'a, 'ctx> {
     fn emit_function(&self, function: Function) -> Result<()> {
         let identifier = function.identifier.get_token().get_identifier()?;
         let _return_type = function.return_type;
-        let _argument_types = function.argument_types;
+        let arguments = function.arguments;
 
         let i64_type = self.context.i64_type();
 
+        // create param_types
+        let mut param_types: Vec<BasicTypeEnum> = vec![];
+        for _ in 0..(arguments.len()) {
+            param_types.push(i64_type.into());
+        }
+
         let function_value =
             self.module
-                .add_function(&identifier, i64_type.fn_type(&[], false), None);
+                .add_function(&identifier, i64_type.fn_type(&param_types, false), None);
 
         let basic_block = self.context.append_basic_block(function_value, "entry");
-        let mut environment = Environment::new();
         self.builder.position_at_end(basic_block);
+
+        let mut environment = Environment::new();
+        for (i, (argument_identifier, argument_type)) in arguments.into_iter().enumerate() {
+            let identifier = argument_identifier.get_token().get_identifier()?;
+            let _ty = argument_type.get_token().get_type()?;
+            let arg_value = function_value
+                .get_nth_param(i as u32)
+                .unwrap()
+                .into_int_value();
+            let pointer_value = self.builder.build_alloca(i64_type, "arg");
+            self.builder.build_store(pointer_value, arg_value);
+            environment.insert(identifier, pointer_value);
+        }
 
         for statement in function.block.into_iter() {
             match statement {
@@ -166,7 +185,13 @@ impl<'a, 'ctx> Emitter<'a, 'ctx> {
             }
             Operator::FnCall(function_name) => {
                 if let Some(fn_value) = self.module.get_function(&function_name) {
-                    let func_calls_site = self.builder.build_call(fn_value, &[], "func_call");
+                    let mut parameters: Vec<BasicValueEnum> = Vec::new();
+                    for parameter in node.get_operand() {
+                        parameters.push(self.emit_expression_node(*parameter, environment)?.into());
+                    }
+
+                    let func_calls_site =
+                        self.builder.build_call(fn_value, &parameters, "func_call");
                     Ok(func_calls_site
                         .try_as_basic_value()
                         .left()

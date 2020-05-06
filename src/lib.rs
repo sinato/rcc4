@@ -165,4 +165,17 @@ mod tests {
         ";
         run_test(code, "82");
     }
+
+    #[test]
+    fn function_call_with_args() {
+        let code = "
+        int func(int a, int b) {
+            return a + b;
+        }
+        int main() {
+            return func(1, 2);
+        }
+        ";
+        run_test(code, "3");
+    }
 }
