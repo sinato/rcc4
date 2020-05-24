@@ -29,326 +29,217 @@ impl fmt::Display for Operator {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ExpressionNode {
-    pub operator: Operator,
-    pub operand: Vec<Box<ExpressionNode>>,
+pub struct Expression {
+    pub expression: Exp2,
 }
-impl ExpressionNode {
-    /// parse and get expression_node
-    ///
-    /// expression_node := eq_node
-    pub fn parse(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
-        parse_eq_node(tokens)
-    }
-    pub fn get_operator_clone(&self) -> Operator {
-        self.operator.clone()
-    }
-    pub fn get_operand(self) -> Vec<Box<ExpressionNode>> {
-        self.operand
-    }
-    pub fn create_single_node_num(num: u64) -> Box<ExpressionNode> {
-        Box::new(ExpressionNode {
-            operator: Operator::Num(num),
-            operand: vec![],
+impl Expression {
+    pub fn parse(tokens: &mut Tokens) -> Result<Expression> {
+        Ok(Expression {
+            expression: Exp2::parse(tokens)?,
         })
     }
-    pub fn create_single_node_ide(identifier: String) -> Box<ExpressionNode> {
-        Box::new(ExpressionNode {
-            operator: Operator::Identifier(identifier),
-            operand: vec![],
-        })
+    pub fn to_string(&self, space_num: u32) -> String {
+        format!("{}", self.expression.to_string(space_num))
     }
-    pub fn to_string(&self, tab_level: u32) -> String {
-        let mut s = "".to_owned();
-        s += &format!("{}{}\n", get_space(tab_level), self.operator);
-        for val in self.operand.iter() {
-            s += &format!("{}", val.to_string(tab_level + 1));
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Exp2 {
+    Single(Exp12),
+    Eq(Vec<Exp12>),
+}
+impl Exp2 {
+    fn parse(tokens: &mut Tokens) -> Result<Exp2> {
+        let mut operand = vec![Exp12::parse(tokens)?];
+        while let Some(_token) = tokens.check_next_operator("=") {
+            tokens.next(); // consume "="
+            operand.push(Exp12::parse(tokens)?);
         }
-        s
+        if operand.len() == 1 {
+            Ok(Exp2::Single(operand.remove(0)))
+        } else {
+            Ok(Exp2::Eq(operand))
+        }
     }
-}
-
-/// parse and get eq_node
-///
-/// eq_node := add_node (Token::Operator("=") add_node)*
-fn parse_eq_node(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
-    let mut operand = vec![parse_add_node(tokens)?];
-
-    while let Some(_token) = tokens.check_next_operator("=") {
-        tokens.next(); // consume "="
-        operand.push(parse_add_node(tokens)?);
-    }
-    Ok(reduce_redundunt_binary_operation(Operator::Eq, operand))
-}
-
-/// parse and get add_node
-///
-/// add_node := mul_node (Token::Operator("+") mul_node)*
-fn parse_add_node(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
-    let mut operand = vec![parse_mul_node(tokens)?];
-
-    while let Some(_token) = tokens.check_next_operator("+") {
-        tokens.next(); // consume "+"
-        operand.push(parse_mul_node(tokens)?);
-    }
-    Ok(reduce_redundunt_binary_operation(Operator::Add, operand))
-}
-
-/// parse and get mul_node
-///
-/// mul_node := fn_call_node (Token::Operator("*") fn_call_node)*
-fn parse_mul_node(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
-    let mut operand = vec![parse_fn_call_node(tokens)?];
-
-    while let Some(_token) = tokens.check_next_operator("*") {
-        tokens.next(); // consume "*"
-        operand.push(parse_fn_call_node(tokens)?);
-    }
-    Ok(reduce_redundunt_binary_operation(Operator::Mul, operand))
-}
-
-/// parse and get fn_call_node (function call node)
-///
-/// fn_call_node := Token::Identifier Token::Parenthesis("(") (expression_node (Token::Comma expresssion_node)*)? Token::Parenthesis(")") | leaf_node
-fn parse_fn_call_node(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
-    // match Token::Identifier Token::Parenthesis
-    if let Some(token) = tokens.peek() {
-        if let Token::Identifier(_) = token.get_token() {
-            if let Some(token2) = tokens.peek2() {
-                if let Token::Parenthesis(_) = token2.get_token() {
-                    let identifier = tokens.next().unwrap().get_token().get_identifier().unwrap();
-                    tokens.next(); // consume (
-
-                    // match (expression_node (Token::Comma expresssion_node)*)?
-                    let mut parameters: Vec<Box<ExpressionNode>> = vec![];
-                    if tokens.check_next_is_expression_node() {
-                        parameters.push(ExpressionNode::parse(tokens)?);
-                    }
-                    loop {
-                        if let Some(token) = tokens.peek() {
-                            if let Token::Comma = token.get_token() {
-                                tokens.next(); // consume ,
-                                parameters.push(ExpressionNode::parse(tokens)?);
-                                continue;
-                            }
-                        }
-                        break;
-                    }
-
-                    tokens.next(); // consume )
-                    return Ok(Box::new(ExpressionNode {
-                        operator: Operator::FnCall(identifier),
-                        operand: parameters,
-                    }));
+    pub fn to_string(&self, space_num: u32) -> String {
+        match self {
+            Exp2::Single(exp) => format!("{}", exp.to_string(space_num)),
+            Exp2::Eq(exps) => {
+                let mut s = format!("{}operator: =\n", get_space(space_num));
+                for exp in exps {
+                    s += &format!("{}\n", exp.to_string(space_num + 1))
                 }
+                s
             }
         }
     }
-    parse_leaf_node(tokens)
 }
 
-/// parse and get leaf_node
-///
-/// leaf_node := Token::Number | Token::Identifier
-fn parse_leaf_node(tokens: &mut Tokens) -> Result<Box<ExpressionNode>> {
-    if let Some(token) = tokens.peek() {
-        if let Token::Number(_) = token.get_token() {
-            let num = tokens.next().unwrap().get_token().get_number().unwrap();
-            return Ok(ExpressionNode::create_single_node_num(num));
+#[derive(Clone, Debug, PartialEq)]
+pub enum Exp12 {
+    Single(Exp13),
+    Add(Vec<Exp13>),
+}
+impl Exp12 {
+    fn parse(tokens: &mut Tokens) -> Result<Exp12> {
+        let mut operand = vec![Exp13::parse(tokens)?];
+        while let Some(_token) = tokens.check_next_operator("+") {
+            tokens.next(); // consume "+"
+            operand.push(Exp13::parse(tokens)?);
         }
-        if let Token::Identifier(_) = token.get_token() {
-            let identifier = tokens.next().unwrap().get_token().get_identifier().unwrap();
-            return Ok(ExpressionNode::create_single_node_ide(identifier));
+        if operand.len() == 1 {
+            Ok(Exp12::Single(operand.remove(0)))
+        } else {
+            Ok(Exp12::Add(operand))
         }
     }
-    Err(ParseError::Unexpect(tokens.next()))
+    pub fn to_string(&self, space_num: u32) -> String {
+        match self {
+            Exp12::Single(exp) => format!("{}", exp.to_string(space_num)),
+            Exp12::Add(exps) => {
+                let mut s = format!("{}operator: +\n", get_space(space_num));
+                for exp in exps {
+                    s += &format!("{}\n", exp.to_string(space_num + 1))
+                }
+                s
+            }
+        }
+    }
 }
 
-/// simplify redundunt tree
-/// from "root - operator - [num]"
-/// to "root - num"
-fn reduce_redundunt_binary_operation(
-    operator: Operator,
-    operand: Vec<Box<ExpressionNode>>,
-) -> Box<ExpressionNode> {
-    if operand.len() == 1 {
-        operand.get(0).unwrap().to_owned()
-    } else {
-        Box::new(ExpressionNode { operator, operand })
+#[derive(Clone, Debug, PartialEq)]
+pub enum Exp13 {
+    Single(Exp16),
+    Mul(Vec<Exp16>),
+}
+impl Exp13 {
+    fn parse(tokens: &mut Tokens) -> Result<Exp13> {
+        let mut operand = vec![Exp16::parse(tokens)?];
+        while let Some(_token) = tokens.check_next_operator("*") {
+            tokens.next(); // consume "*"
+            operand.push(Exp16::parse(tokens)?);
+        }
+        if operand.len() == 1 {
+            Ok(Exp13::Single(operand.remove(0)))
+        } else {
+            Ok(Exp13::Mul(operand))
+        }
+    }
+    pub fn to_string(&self, space_num: u32) -> String {
+        match self {
+            Exp13::Single(exp) => format!("{}", exp.to_string(space_num)),
+            Exp13::Mul(exps) => {
+                let mut s = format!("{}operator: *\n", get_space(space_num));
+                for exp in exps {
+                    s += &format!("{}\n", exp.to_string(space_num + 1))
+                }
+                s
+            }
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Exp16 {
+    Number(u64),
+    Identifier(String),
+    FunctionCall(String, Vec<Expression>),
+}
+impl Exp16 {
+    fn parse(tokens: &mut Tokens) -> Result<Exp16> {
+        if let Some(token) = tokens.peek() {
+            if let Token::Number(_) = token.get_token() {
+                let num = tokens.next().unwrap().get_token().get_number().unwrap();
+                return Ok(Exp16::Number(num));
+            }
+            if let Token::Identifier(_) = token.get_token() {
+                if let Some(token2) = tokens.peek2() {
+                    if let Token::Parenthesis(_) = token2.get_token() {
+                        let identifier =
+                            tokens.next().unwrap().get_token().get_identifier().unwrap();
+                        tokens.next(); // consume (
+
+                        // match (expression_node (Token::Comma expresssion_node)*)?
+                        let mut parameters: Vec<Expression> = vec![];
+                        if tokens.check_next_is_expression_node() {
+                            parameters.push(Expression::parse(tokens)?);
+                        }
+                        loop {
+                            if let Some(token) = tokens.peek() {
+                                if let Token::Comma = token.get_token() {
+                                    tokens.next(); // consume ,
+                                    parameters.push(Expression::parse(tokens)?);
+                                    continue;
+                                }
+                            }
+                            break;
+                        }
+                        tokens.next(); // consume )
+                        return Ok(Exp16::FunctionCall(identifier, parameters));
+                    }
+                }
+                let identifier = tokens.next().unwrap().get_token().get_identifier().unwrap();
+                return Ok(Exp16::Identifier(identifier));
+            }
+        }
+        Err(ParseError::Unexpect(tokens.next()))
+    }
+    pub fn to_string(&self, space_num: u32) -> String {
+        match self {
+            Exp16::Number(num) => format!("{}{}", get_space(space_num), num),
+            Exp16::Identifier(identifier) => format!("{}{}", get_space(space_num), identifier),
+            Exp16::FunctionCall(identifier, exps) => {
+                let mut s = format!("{}function_call: {}\n", get_space(space_num), identifier);
+                for exp in exps {
+                    s += &format!("{}\n", exp.to_string(space_num + 1))
+                }
+                s
+            }
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
 
-    use super::super::super::tokenize::token::ManagedToken;
     use super::super::testutil::*;
     use super::*;
 
     #[cfg(test)]
-    mod tests_parse_eq_node {
+    mod tests_parse_expression {
 
         use super::*;
 
         #[test]
-        fn pass_one_term() {
-            let mut tokens = Tokens::new(vec![mtoken(Token::Number(10))]);
-            let actual = parse_eq_node(&mut tokens).unwrap();
-            assert_eq!(actual, num(10));
-        }
-
-        #[test]
-        #[should_panic(expected = "expect [Token::Number]: Unexpect(Some(semicolon))")]
-        fn fail() {
-            let mut tokens = Tokens::new(vec![mtoken(Token::Semicolon)]);
-            parse_eq_node(&mut tokens).expect("expect [Token::Number]");
-        }
-
-        #[test]
-        fn pass_one_term_with_semicolon() {
-            let mut tokens = Tokens::new(vec![mtoken(Token::Number(10)), mtoken(Token::Semicolon)]);
-            let actual = parse_eq_node(&mut tokens).unwrap();
-            assert_eq!(actual, num(10));
-        }
-
-        #[test]
-        fn pass_two_terms() {
+        fn parse_expression() {
+            // a = 10 + 20 * func(30)
             let mut tokens = Tokens::new(vec![
                 mtoken(Token::Identifier("a".to_owned())),
                 mtoken(Token::Operator("=".to_owned())),
                 mtoken(Token::Number(10)),
                 mtoken(Token::Operator("+".to_owned())),
                 mtoken(Token::Number(20)),
-            ]);
-            let actual = parse_eq_node(&mut tokens).unwrap();
-            let expect = exp("=", vec![ide("a"), exp("+", vec![num(10), num(20)])]);
-            assert_eq!(actual, expect);
-        }
-    }
-
-    #[cfg(test)]
-    mod tests_parse_add_node {
-        use super::*;
-
-        #[test]
-        fn pass_one_term() {
-            let mut tokens = Tokens::new(vec![mtoken(Token::Number(10))]);
-            let actual = parse_add_node(&mut tokens).unwrap();
-            assert_eq!(actual, num(10));
-        }
-
-        #[test]
-        #[should_panic(expected = "expect [Token::Number]: Unexpect(Some(semicolon))")]
-        fn fail() {
-            let mut tokens = Tokens::new(vec![mtoken(Token::Semicolon)]);
-            parse_add_node(&mut tokens).expect("expect [Token::Number]");
-        }
-
-        #[test]
-        fn pass_one_term_with_semicolon() {
-            let mut tokens = Tokens::new(vec![mtoken(Token::Number(10)), mtoken(Token::Semicolon)]);
-            let actual = parse_add_node(&mut tokens).unwrap();
-            assert_eq!(actual, num(10));
-        }
-
-        #[test]
-        fn pass_two_terms() {
-            let mut tokens = Tokens::new(vec![
-                mtoken(Token::Number(10)),
-                mtoken(Token::Operator("+".to_owned())),
-                mtoken(Token::Number(20)),
                 mtoken(Token::Operator("*".to_owned())),
+                mtoken(Token::Identifier("func".to_owned())),
+                mtoken(Token::Parenthesis("(".to_owned())),
                 mtoken(Token::Number(30)),
+                mtoken(Token::Parenthesis(")".to_owned())),
             ]);
-            let actual = parse_add_node(&mut tokens).unwrap();
-            let expect = exp("+", vec![num(10), exp("*", vec![num(20), num(30)])]);
+
+            let actual = Expression::parse(&mut tokens).unwrap();
+
+            let num_10 = Exp13::Single(Exp16::Number(10));
+            let num_20 = Exp16::Number(20);
+            let parameter = Expression {
+                expression: Exp2::Single(Exp12::Single(Exp13::Single(Exp16::Number(30)))),
+            };
+            let func_call = Exp16::FunctionCall("func".to_owned(), vec![parameter]);
+            let mul = Exp13::Mul(vec![num_20, func_call]);
+            let add = Exp12::Add(vec![num_10, mul]);
+            let ide = Exp12::Single(Exp13::Single(Exp16::Identifier("a".to_owned())));
+            let eq = Exp2::Eq(vec![ide, add]);
+            let expect = Expression { expression: eq };
             assert_eq!(actual, expect);
-        }
-    }
-
-    #[cfg(test)]
-    mod tests_parse_mul_node {
-        use super::*;
-
-        #[test]
-        fn pass_one_term() {
-            let mut tokens = Tokens::new(vec![mtoken(Token::Number(10))]);
-            let actual = parse_mul_node(&mut tokens).unwrap();
-            assert_eq!(actual, num(10));
-        }
-
-        #[test]
-        #[should_panic(expected = "expect [Token::Number]: Unexpect(Some(semicolon))")]
-        fn fail() {
-            let mut tokens = Tokens::new(vec![mtoken(Token::Semicolon)]);
-            parse_mul_node(&mut tokens).expect("expect [Token::Number]");
-        }
-
-        #[test]
-        fn pass_one_term_with_semicolon() {
-            let mut tokens = Tokens::new(vec![mtoken(Token::Number(10)), mtoken(Token::Semicolon)]);
-            let actual = parse_mul_node(&mut tokens).unwrap();
-            assert_eq!(actual, num(10));
-        }
-
-        #[test]
-        fn pass_two_terms() {
-            let mut tokens = Tokens::new(vec![
-                mtoken(Token::Number(10)),
-                mtoken(Token::Operator("*".to_owned())),
-                mtoken(Token::Number(20)),
-            ]);
-            let actual = parse_mul_node(&mut tokens).unwrap();
-            let expect = exp("*", vec![num(10), num(20)]);
-            assert_eq!(actual, expect);
-        }
-    }
-
-    #[cfg(test)]
-    mod tests_parse_fn_call_node {
-        use super::*;
-
-        #[test]
-        fn pass_leaf_node() {
-            let mut tokens = Tokens::new(vec![ManagedToken::new(Token::Number(10), 0, 0)]);
-            let actual = parse_fn_call_node(&mut tokens).unwrap();
-            assert_eq!(actual, num(10));
-        }
-
-        #[test]
-        fn pass_fn_call_node() {
-            let mut tokens = Tokens::new(vec![
-                ManagedToken::new(Token::Identifier("func".to_owned()), 0, 0),
-                ManagedToken::new(Token::Parenthesis("(".to_owned()), 0, 0),
-                ManagedToken::new(Token::Parenthesis(")".to_owned()), 0, 0),
-            ]);
-            let actual = *parse_fn_call_node(&mut tokens).unwrap();
-            assert_eq!(
-                actual,
-                ExpressionNode {
-                    operator: Operator::FnCall("func".to_owned()),
-                    operand: vec![]
-                }
-            );
-        }
-    }
-
-    #[cfg(test)]
-    mod tests_parse_leaf_node {
-        use super::*;
-
-        #[test]
-        fn pass() {
-            let mut tokens = Tokens::new(vec![ManagedToken::new(Token::Number(10), 0, 0)]);
-            let actual = parse_leaf_node(&mut tokens).unwrap();
-            assert_eq!(actual, num(10));
-        }
-
-        #[test]
-        #[should_panic(expected = "expect [Token::Number]: Unexpect(Some(semicolon))")]
-        fn fail() {
-            let mut tokens = Tokens::new(vec![mtoken(Token::Semicolon)]);
-            parse_leaf_node(&mut tokens).expect("expect [Token::Number]");
         }
     }
 }

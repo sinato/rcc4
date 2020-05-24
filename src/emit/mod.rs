@@ -1,6 +1,6 @@
 mod error;
 
-use super::parse::expression::{ExpressionNode, Operator};
+use super::parse::expression::{Exp12, Exp13, Exp16, Exp2, Expression};
 use super::parse::function::Function;
 use super::parse::program::Program;
 use super::parse::statement::{DeclareStatement, ExpressionStatement, ReturnStatement, Statement};
@@ -130,7 +130,7 @@ impl<'a, 'ctx> Emitter<'a, 'ctx> {
         expression_statement: ExpressionStatement,
         environment: &'a Environment,
     ) -> Result<IntValue> {
-        self.emit_expression_node(expression_statement.expression_node, environment)
+        self.emit_expression(expression_statement.expression, environment)
     }
 
     fn emit_return_statement(
@@ -138,71 +138,75 @@ impl<'a, 'ctx> Emitter<'a, 'ctx> {
         return_statement: ReturnStatement,
         environment: &Environment,
     ) -> Result<()> {
-        let return_expression_node = return_statement.expression_node;
-        let ret_value = self.emit_expression_node(return_expression_node, environment)?;
+        let return_expression_node = return_statement.expression;
+        let ret_value = self.emit_expression(return_expression_node, environment)?;
         self.builder.build_return(Some(&ret_value));
         Ok(())
     }
 
-    fn emit_expression_node(
+    fn emit_expression(
         &self,
-        node: ExpressionNode,
+        node: Expression,
         environment: &'a Environment,
     ) -> Result<IntValue<'a>> {
-        let i64_type = self.context.i64_type();
-
-        match node.get_operator_clone() {
-            Operator::Add => {
-                let mut const_nums: Vec<IntValue> = Vec::new();
-                for operand in node.get_operand().into_iter() {
-                    const_nums.push(self.emit_expression_node(*operand, environment)?);
+        self.emit_exp2(node.expression, environment)
+    }
+    fn emit_exp2(&self, node: Exp2, environment: &'a Environment) -> Result<IntValue<'a>> {
+        match node {
+            Exp2::Single(exp) => Ok(self.emit_exp12(exp, environment)?),
+            Exp2::Eq(operands) => {
+                if operands.len() == 1 {
+                    let mut operand_itr = operands.into_iter();
+                    self.emit_exp12(operand_itr.next().unwrap(), environment)
+                } else {
+                    // todo emit multiple term (eg. a = b = c)
+                    let mut operand_itr = operands.into_iter();
+                    let lhs: PointerValue =
+                        self.emit_expression_node_as_lhs(operand_itr.next().unwrap(), environment)?;
+                    let rhs: IntValue =
+                        self.emit_exp12(operand_itr.next().unwrap(), environment)?;
+                    self.builder.build_store(lhs, rhs);
+                    Ok(rhs)
                 }
-                let mut reduced = i64_type.const_int(0, false);
+            }
+        }
+    }
+    fn emit_exp12(&self, node: Exp12, environment: &'a Environment) -> Result<IntValue<'a>> {
+        match node {
+            Exp12::Single(exp) => Ok(self.emit_exp13(exp, environment)?),
+            Exp12::Add(operands) => {
+                let mut const_nums: Vec<IntValue> = Vec::new();
+                for operand in operands.into_iter() {
+                    const_nums.push(self.emit_exp13(operand, environment)?);
+                }
+                let mut reduced = self.context.i64_type().const_int(0, false);
                 for const_num in const_nums.into_iter() {
                     reduced = self.builder.build_int_add(reduced, const_num, "sum");
                 }
                 Ok(reduced)
             }
-            Operator::Mul => {
+        }
+    }
+    fn emit_exp13(&self, node: Exp13, environment: &'a Environment) -> Result<IntValue<'a>> {
+        match node {
+            Exp13::Single(exp) => Ok(self.emit_exp16(exp, environment)?),
+            Exp13::Mul(operands) => {
                 let mut const_nums: Vec<IntValue> = Vec::new();
-                for operand in node.get_operand().into_iter() {
-                    const_nums.push(self.emit_expression_node(*operand, environment)?);
+                for operand in operands.into_iter() {
+                    const_nums.push(self.emit_exp16(operand, environment)?);
                 }
-                let mut reduced = i64_type.const_int(1, false);
+                let mut reduced = self.context.i64_type().const_int(1, false);
                 for const_num in const_nums.into_iter() {
                     reduced = self.builder.build_int_mul(reduced, const_num, "mul");
                 }
                 Ok(reduced)
             }
-            Operator::Eq => {
-                let mut operand_itr = node.get_operand().into_iter();
-                let lhs: PointerValue =
-                    self.emit_expression_node_as_lhs(*operand_itr.next().unwrap(), environment)?;
-                let rhs: IntValue =
-                    self.emit_expression_node(*operand_itr.next().unwrap(), environment)?;
-                self.builder.build_store(lhs, rhs);
-                Ok(rhs)
-            }
-            Operator::FnCall(function_name) => {
-                if let Some(fn_value) = self.module.get_function(&function_name) {
-                    let mut parameters: Vec<BasicValueEnum> = Vec::new();
-                    for parameter in node.get_operand() {
-                        parameters.push(self.emit_expression_node(*parameter, environment)?.into());
-                    }
-
-                    let func_calls_site =
-                        self.builder.build_call(fn_value, &parameters, "func_call");
-                    Ok(func_calls_site
-                        .try_as_basic_value()
-                        .left()
-                        .unwrap()
-                        .into_int_value())
-                } else {
-                    Err(CompileError::NotFound("function".to_owned()))
-                }
-            }
-            Operator::Num(num) => Ok(i64_type.const_int(num, false)),
-            Operator::Identifier(identifier) => {
+        }
+    }
+    fn emit_exp16(&self, node: Exp16, environment: &'a Environment) -> Result<IntValue<'a>> {
+        match node {
+            Exp16::Number(number) => Ok(self.context.i64_type().const_int(number, false)),
+            Exp16::Identifier(identifier) => {
                 let variable_pointer = environment.get(&identifier);
                 if let Some(variable_pointer) = variable_pointer {
                     let value = self
@@ -214,26 +218,50 @@ impl<'a, 'ctx> Emitter<'a, 'ctx> {
                     Err(CompileError::Undeclared(identifier))
                 }
             }
+            Exp16::FunctionCall(identifier, parameter_expressions) => {
+                if let Some(fn_value) = self.module.get_function(&identifier) {
+                    let mut parameters: Vec<BasicValueEnum> = Vec::new();
+                    for parameter in parameter_expressions {
+                        parameters.push(self.emit_expression(parameter, environment)?.into());
+                    }
+                    let func_calls_site =
+                        self.builder.build_call(fn_value, &parameters, "func_call");
+                    Ok(func_calls_site
+                        .try_as_basic_value()
+                        .left()
+                        .unwrap()
+                        .into_int_value())
+                } else {
+                    Err(CompileError::NotFound("function".to_owned()))
+                }
+            }
         }
     }
 
     fn emit_expression_node_as_lhs(
         &self,
-        node: ExpressionNode,
+        node: Exp12,
         environment: &'a Environment,
     ) -> Result<PointerValue<'a>> {
-        match node.get_operator_clone() {
-            Operator::Identifier(identifier) => {
-                if let Some(pointer_value) = environment.get(&identifier) {
-                    Ok(pointer_value)
-                } else {
-                    Err(CompileError::Undeclared(identifier))
-                }
-            }
-            _ => Err(CompileError::Unexpect(format!(
-                "{:?}",
-                node.get_operator_clone()
-            ))),
+        match node {
+            Exp12::Single(exp) => match exp {
+                Exp13::Single(exp) => match exp {
+                    Exp16::Identifier(identifier) => {
+                        if let Some(pointer_value) = environment.get(&identifier) {
+                            Ok(pointer_value)
+                        } else {
+                            Err(CompileError::Undeclared(identifier))
+                        }
+                    }
+                    _ => unimplemented!(),
+                },
+                _ => Err(CompileError::Unexpect(
+                    "Expect declared variable identifier".to_owned(),
+                )),
+            },
+            _ => Err(CompileError::Unexpect(
+                "Expect declared variable identifier".to_owned(),
+            )),
         }
     }
 }

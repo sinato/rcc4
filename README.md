@@ -30,10 +30,11 @@ statement := declare_statement | expression_statement
 declare_statement := token::type token::identifier token::semicolon
 expression_statement := expression_node token::semicolon
 return_statement := Token::Return expresssion_node Token::Semicolon
-expression_node := eq_node
-eq_node := plus_node (Token::Operator("=") plus_node)*
-plus_node := mul_node (Token::Operator("+") mul_node)*
-mul_node := fn_call_node (Token::Operator("*") fn_call_node)*
-fn_call_node := Token::Identifier Token::Parenthesis("(") (expression_node (Token::Comma expresssion_node)*)? Token::Parenthesis(")") | leaf_node
-leaf_node := Token::Number | Token::Identifier
+
+expression_node := exp2
+exp2  := exp12 | exp12 (Token::Operator("=") exp12)+
+exp12 := exp13 | exp13 (Token::Operator("+") exp13)+
+exp13 := exp16 | exp16 (Token::Operator("*") exp16)*
+exp16 := Token::Number | Token::Identifier | function_call
+function_call := Token::Identifier Token::Parenthesis("(") (expression_node (Token::Comma expresssion_node)*)? Token::Parenthesis(")")
 ```
