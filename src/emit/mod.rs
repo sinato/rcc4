@@ -117,8 +117,8 @@ impl<'a, 'ctx> Emitter<'a, 'ctx> {
         declare_statement: DeclareStatement,
         environment: &mut Environment<'ctx>,
     ) -> Result<()> {
-        let _ty = declare_statement.ty.get_token().get_type()?;
-        let identifier = declare_statement.identifier.get_token().get_identifier()?;
+        let type_struct = declare_statement.type_struct;
+        let identifier = type_struct.get_identifier();
         let i64_type = self.context.i64_type();
         let pointer_value = self.builder.build_alloca(i64_type, "variable");
         environment.insert(identifier, pointer_value);

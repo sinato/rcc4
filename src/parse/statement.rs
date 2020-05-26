@@ -40,31 +40,53 @@ impl Statement {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct DeclareStatement {
-    pub identifier: ManagedToken,
-    pub ty: ManagedToken,
+pub struct TypeStruct {
+    base: String,
+    pointer: u32,
+    identifier: String,
+    post: Vec<u32>,
 }
-impl DeclareStatement {
-    /// parse and get declare_statement
-    ///
-    /// declare_statement := Token::Type Token::Identifier Token::Semicolon
-    pub fn parse(tokens: &mut Tokens) -> Result<DeclareStatement> {
-        if let Some(token) = tokens.peek() {
-            if let Token::Type(_) = token.get_token() {
-                let ty = tokens.consume_type()?;
-                let identifier = tokens.consume_identifier()?;
-                tokens.consume_semicolon()?;
-                return Ok(DeclareStatement { identifier, ty });
-            }
-        }
-        Err(ParseError::Unexpect(tokens.next()))
+impl TypeStruct {
+    pub fn parse(tokens: &mut Tokens) -> Result<TypeStruct> {
+        let base = tokens.consume_type()?.get_token().get_type()?;
+        let pointer = 0; // TODO
+        let identifier = tokens.consume_identifier()?.get_token().get_identifier()?;
+        let post = vec![]; // TODO
+        Ok(TypeStruct {
+            base,
+            pointer,
+            identifier,
+            post,
+        })
+    }
+    pub fn get_identifier(&self) -> String {
+        self.identifier.clone()
     }
     pub fn to_string(&self, tab_level: u32) -> String {
         format!(
-            "{}declare_statement -> {}, {}\n",
+            "{}declare_statement -> type {}, identifier {}\n",
             get_space(tab_level),
-            self.identifier,
-            self.ty
+            self.base,
+            self.identifier
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct DeclareStatement {
+    pub type_struct: TypeStruct,
+}
+impl DeclareStatement {
+    pub fn parse(tokens: &mut Tokens) -> Result<DeclareStatement> {
+        let type_struct = TypeStruct::parse(tokens)?;
+        tokens.consume_semicolon()?;
+        return Ok(DeclareStatement { type_struct });
+    }
+    pub fn to_string(&self, tab_level: u32) -> String {
+        format!(
+            "{}declare_statement -> {}\n",
+            get_space(tab_level),
+            self.type_struct.to_string(tab_level),
         )
     }
 }

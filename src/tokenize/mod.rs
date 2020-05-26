@@ -30,6 +30,8 @@ impl<'a> Tokenizer<'a> {
                 tokens.push(tokenizer.consume_operator());
             } else if c == &'{' || c == &'}' {
                 tokens.push(tokenizer.consume_bracket());
+            } else if c == &'[' || c == &']' {
+                tokens.push(tokenizer.consume_sbracket());
             } else if c == &'(' || c == &')' {
                 tokens.push(tokenizer.consume_parenthesis());
             } else if c == &' ' || c == &'\n' {
@@ -114,6 +116,13 @@ impl<'a> Tokenizer<'a> {
 
         let c = self.next().unwrap();
         ManagedToken::new(Token::Bracket(c.to_string()), line, location)
+    }
+    fn consume_sbracket(&mut self) -> ManagedToken {
+        let line = self.cursor_line;
+        let location = self.cursor_location;
+
+        let c = self.next().unwrap();
+        ManagedToken::new(Token::SBracket(c.to_string()), line, location)
     }
     fn consume_parenthesis(&mut self) -> ManagedToken {
         let line = self.cursor_line;

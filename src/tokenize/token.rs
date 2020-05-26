@@ -43,6 +43,7 @@ pub enum Token {
     Identifier(String),
     Operator(String),
     Bracket(String),
+    SBracket(String),
     Parenthesis(String),
     Return,
     Comma,
@@ -86,6 +87,7 @@ impl fmt::Display for Token {
             Token::Identifier(identifier) => format!("identifier: {}", identifier),
             Token::Operator(operator) => format!("operator: {}", operator),
             Token::Bracket(bracket) => format!("bracket: {}", bracket),
+            Token::SBracket(bracket) => format!("sbracket: {}", bracket),
             Token::Parenthesis(parenthesis) => format!("parenthesis: {}", parenthesis),
             Token::Return => format!("return"),
             Token::Comma => format!("comma"),
@@ -95,7 +97,7 @@ impl fmt::Display for Token {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TokenError {
     UnexpectedType(Token),
 }
