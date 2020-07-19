@@ -1,6 +1,6 @@
-use super::super::tokenize::tokens::Tokens;
 use super::error::ParseError;
 use super::function::Function;
+use rcc_syntax::tokens::Tokens;
 
 type Result<T> = std::result::Result<T, ParseError>;
 

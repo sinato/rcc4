@@ -1,15 +1,15 @@
 mod error;
 
-use super::parse::expression::{Exp12, Exp13, Exp16, Exp2, Expression};
-use super::parse::function::Function;
-use super::parse::program::Program;
-use super::parse::statement::{DeclareStatement, ExpressionStatement, ReturnStatement, Statement};
 use error::CompileError;
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::types::BasicTypeEnum;
 use inkwell::values::{BasicValueEnum, IntValue, PointerValue};
+use rcc_parser::expression::{Exp12, Exp13, Exp16, Exp2, Expression};
+use rcc_parser::function::Function;
+use rcc_parser::program::Program;
+use rcc_parser::statement::{DeclareStatement, ExpressionStatement, ReturnStatement, Statement};
 use std::collections::HashMap;
 use std::path;
 

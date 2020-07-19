@@ -1,4 +1,4 @@
-extern crate rcc4;
+extern crate rcc;
 
 fn main() {
     let code = "
@@ -10,6 +10,6 @@ int main() {
     return func(1, 2);
 }"
     .to_owned();
-    rcc4::compile(code);
-    println!("{:?}", rcc4::run());
+    rcc::compile(code);
+    println!("{:?}", rcc::run());
 }

@@ -1,8 +1,8 @@
-use super::super::tokenize::token::{ManagedToken, Token};
-use super::super::tokenize::tokens::Tokens;
 use super::error::ParseError;
 use super::expression::Expression;
 use super::util::get_space;
+use rcc_syntax::token::{ManagedToken, Token};
+use rcc_syntax::tokens::Tokens;
 
 type Result<T> = std::result::Result<T, ParseError>;
 

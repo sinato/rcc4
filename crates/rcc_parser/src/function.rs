@@ -1,8 +1,8 @@
-use super::super::tokenize::token::{ManagedToken, Token};
-use super::super::tokenize::tokens::Tokens;
 use super::error::ParseError;
 use super::statement::{ReturnStatement, Statement};
 use super::util::get_space;
+use rcc_syntax::token::{ManagedToken, Token};
+use rcc_syntax::tokens::Tokens;
 
 type Result<T> = std::result::Result<T, ParseError>;
 
@@ -95,9 +95,9 @@ impl Function {
 #[cfg(test)]
 mod tests {
 
-    use super::super::super::tokenize::token::Token;
     use super::super::testutil::*;
     use super::*;
+    use rcc_syntax::token::Token;
 
     #[cfg(test)]
     mod consume_arguments {

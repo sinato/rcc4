@@ -1,5 +1,5 @@
-use super::super::tokenize::token::{ManagedToken, TokenError};
-use super::super::tokenize::tokens::ConsumeError;
+use rcc_syntax::token::{ManagedToken, TokenError};
+use rcc_syntax::tokens::ConsumeError;
 use std::error::Error;
 use std::fmt;
 

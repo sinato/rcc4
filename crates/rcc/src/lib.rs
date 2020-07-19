@@ -1,13 +1,11 @@
 extern crate inkwell;
 
 use inkwell::context::Context;
+use rcc_codegen::Emitter;
+use rcc_parser::parse;
+use rcc_syntax::tokens::Tokens;
+use rcc_syntax::Tokenizer;
 use std::process;
-use tokenize::tokens::Tokens;
-use tokenize::Tokenizer;
-
-pub mod emit;
-pub mod parse;
-pub mod tokenize;
 
 pub fn compile(code: String) {
     // print input
@@ -19,7 +17,7 @@ pub fn compile(code: String) {
     println!("{}", tokens);
 
     // parse
-    let node = match parse::parse(&mut tokens) {
+    let node = match parse(&mut tokens) {
         Ok(node) => node,
         Err(err) => panic!(err.to_string()),
     };
@@ -29,7 +27,7 @@ pub fn compile(code: String) {
     let context = Context::create();
     let builder = context.create_builder();
     let module = context.create_module("my_module");
-    match emit::Emitter::emit(&context, &builder, &module, node) {
+    match Emitter::emit(&context, &builder, &module, node) {
         Ok(_) => (),
         Err(e) => panic!(format!("{}", e)),
     }

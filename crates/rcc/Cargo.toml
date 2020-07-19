@@ -1,0 +1,13 @@
+[package]
+name = "rcc"
+version = "0.1.0"
+authors = ["root"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "llvm10-0" }
+rcc_codegen = { path = "../rcc_codegen" }
+rcc_parser = { path = "../rcc_parser" }
+rcc_syntax = { path = "../rcc_syntax" }

@@ -6,9 +6,9 @@ pub mod statement;
 pub mod testutil;
 pub mod util;
 
-use super::tokenize::tokens::Tokens;
 use error::ParseError;
 use program::Program;
+use rcc_syntax::tokens::Tokens;
 
 type Result<T> = std::result::Result<T, ParseError>;
 

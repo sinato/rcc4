@@ -1,5 +1,5 @@
-use super::super::tokenize::token::TokenError;
 use inkwell::support::LLVMString;
+use rcc_syntax::token::TokenError;
 use std::error::Error;
 use std::fmt;
 
